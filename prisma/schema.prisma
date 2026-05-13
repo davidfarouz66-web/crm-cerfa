@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("admin")
+  tenantId  String   @default("default")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  auditLogs AuditLog[]
+}
+
+model Association {
+  id               String   @id @default(cuid())
+  nom              String
+  adresse          String?
+  codePostal       String?
+  ville            String?
+  siret            String?
+  rna              String?
+  objetSocial      String?
+  qualiteOrganisme String?
+  representant     String?
+  telephone        String?
+  email            String?
+  logoUrl          String?
+  signatureUrl     String?
+  cachetUrl        String?
+  tenantId         String   @default("default")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Donateur {
+  id            String   @id @default(cuid())
+  type          String   @default("particulier")
+  civilite      String?  @default("M")
+  nom           String
+  prenom        String?
+  raisonSociale String?
+  adresse       String?
+  codePostal    String?
+  ville         String?
+  pays          String   @default("France")
+  email         String?
+  telephone     String?
+  notes         String?
+  tenantId      String   @default("default")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  cerfas        Cerfa[]
+}
+
+model Cerfa {
+  id             String   @id @default(cuid())
+  numeroCerfa    String   @unique
+  donateur       Donateur @relation(fields: [donateurId], references: [id])
+  donateurId     String
+  dateDon        DateTime
+  montant        Float
+  modePaiement   String
+  objetDon       String?
+  dateEmission   DateTime @default(now())
+  pdfPath        String?
+  tenantId       String   @default("default")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Settings {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  user       User?    @relation(fields: [userId], references: [id])
+  userId     String?
+  action     String
+  entityType String
+  entityId   String?
+  oldValues  String?
+  newValues  String?
+  createdAt  DateTime @default(now())
+}
