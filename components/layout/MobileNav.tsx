@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, X, BarChart3, Settings, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 const navItems = [
@@ -20,7 +20,7 @@ export default function MobileNav() {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 bottom-14 z-40 md:hidden" onClick={() => setOpen(false)}>
           <div className="absolute bottom-16 right-3 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden w-52">
             <Link href="/recapitulatif" onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
@@ -56,8 +56,8 @@ export default function MobileNav() {
           className={`flex-1 flex flex-col items-center py-3 text-xs font-medium transition-colors ${
             open ? "text-blue-600" : "text-slate-500"
           }`}>
-          <MoreHorizontal size={20} className="mb-0.5" />
-          Plus
+          {open ? <X size={20} className="mb-0.5" /> : <MoreHorizontal size={20} className="mb-0.5" />}
+          {open ? "Fermer" : "Plus"}
         </button>
       </nav>
     </>
