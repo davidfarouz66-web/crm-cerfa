@@ -10,7 +10,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ filenam
 
   try {
     const bytes = await downloadPDF(filename);
-    return new NextResponse(bytes, {
+    return new NextResponse(Buffer.from(bytes), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${filename}"`,
