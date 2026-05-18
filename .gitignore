@@ -48,3 +48,4 @@ prisma/dev.db-journal
 
 # PDFs générés
 /public/storage/
+dev.db
