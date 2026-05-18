@@ -37,18 +37,18 @@ export default function DonateursPage() {
       : `${d.prenom || ""} ${d.nom}`.trim();
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-8">
+      <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Donateurs</h1>
-          <p className="text-slate-500 mt-1">{donateurs.length} donateur(s)</p>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-800">Donateurs</h1>
+          <p className="text-slate-500 text-sm mt-0.5">{donateurs.length} donateur(s)</p>
         </div>
         <Link
           href="/donateurs/nouveau"
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm"
         >
           <UserPlus size={16} />
-          <span className="hidden sm:inline">Ajouter</span>
+          <span>Ajouter</span>
         </Link>
       </div>
 
@@ -77,30 +77,31 @@ export default function DonateursPage() {
               href={`/donateurs/${d.id}`}
               className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
             >
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-white font-bold text-sm ${
                   d.type === "entreprise" ? "bg-violet-500" : "bg-blue-500"
                 }`}>
                   {getNom(d).charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <p className="font-medium text-slate-800 text-sm">{getNom(d)}</p>
-                  <div className="flex items-center gap-3 mt-0.5">
+                <div className="min-w-0">
+                  <p className="font-medium text-slate-800 text-sm truncate">{getNom(d)}</p>
+                  <div className="flex flex-col mt-0.5 gap-0.5">
                     {d.email && (
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Mail size={11} />{d.email}
+                      <span className="text-xs text-slate-400 flex items-center gap-1 truncate">
+                        <Mail size={11} className="shrink-0" />
+                        <span className="truncate">{d.email}</span>
                       </span>
                     )}
                     {d.telephone && (
                       <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Phone size={11} />{d.telephone}
+                        <Phone size={11} className="shrink-0" />{d.telephone}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full font-medium">
+              <div className="flex items-center gap-2 shrink-0 ml-2">
+                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium whitespace-nowrap">
                   {d._count.cerfas} CERFA
                 </span>
                 <ChevronRight size={16} className="text-slate-400" />
