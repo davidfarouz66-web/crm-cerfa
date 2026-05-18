@@ -19,7 +19,7 @@ export default async function DonateurPage({ params }: { params: Promise<{ id: s
   });
   if (!donateur) notFound();
 
-  const totalDons = donateur.cerfas.reduce((s, c) => s + c.montant, 0);
+  const totalDons = donateur.cerfas.reduce((s: number, c: { montant: number }) => s + c.montant, 0);
   const nom = donateur.type === "entreprise"
     ? donateur.raisonSociale || donateur.nom
     : `${donateur.prenom || ""} ${donateur.nom}`.trim();
