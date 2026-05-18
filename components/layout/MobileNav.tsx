@@ -16,7 +16,7 @@ export default function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex z-30 md:hidden">
+    <nav className="mobile-nav fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex z-30 md:hidden" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
       {navItems.map((item) => {
         const Icon = item.icon;
         const active = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
@@ -28,7 +28,7 @@ export default function MobileNav() {
               active ? "text-blue-600" : "text-slate-500"
             }`}
           >
-            <Icon size={20} className={item.href === "/cerfa/nouveau" ? "mb-0.5" : "mb-0.5"} />
+            <Icon size={20} className="mb-0.5" />
             {item.label}
           </Link>
         );
