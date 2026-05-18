@@ -99,7 +99,7 @@ export default async function DonateurPage({ params }: { params: Promise<{ id: s
           <h2 className="font-semibold text-slate-700">Historique des CERFA</h2>
         </div>
         <div className="divide-y divide-slate-50">
-          {donateur.cerfas.map((c: { id: string; numeroCerfa: string; dateDon: Date; modePaiement: string; montant: number; sentAt: Date | null; pdfPath: string | null }) => (
+          {donateur.cerfas.map((c) => (
             <div key={c.id} className="flex items-center justify-between p-4">
               <div>
                 <p className="font-medium text-sm text-slate-800">{c.numeroCerfa}</p>
