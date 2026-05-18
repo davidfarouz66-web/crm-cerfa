@@ -30,12 +30,14 @@ export async function POST(req: Request) {
 
     const donateur = await prisma.donateur.create({
       data: {
-        type:          body.type || "particulier",
-        civilite:      str(body.civilite),
-        nom:           str(body.nom) ?? str(body.raisonSociale) ?? "",
-        prenom:        str(body.prenom),
-        raisonSociale: str(body.raisonSociale),
-        adresse:       str(body.adresse),
+        type:           body.type || "particulier",
+        civilite:       str(body.civilite),
+        nom:            str(body.nom) ?? str(body.raisonSociale) ?? "",
+        prenom:         str(body.prenom),
+        raisonSociale:  str(body.raisonSociale),
+        formeJuridique: str(body.formeJuridique),
+        siretDonateur:  str(body.siretDonateur),
+        adresse:        str(body.adresse),
         codePostal:    str(body.codePostal),
         ville:         str(body.ville),
         email:         str(body.email),

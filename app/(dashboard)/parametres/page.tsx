@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Save, Building2, Upload, ImageIcon } from "lucide-react";
+import { Loader2, Save, Building2, Upload, ImageIcon, Hash } from "lucide-react";
 import Image from "next/image";
 
 interface Association {
@@ -18,6 +18,7 @@ interface Association {
   email?: string;
   logoUrl?: string;
   signatureUrl?: string;
+  cerfaSequence?: number;
 }
 
 const QUALITES = [
@@ -237,6 +238,30 @@ export default function ParametresPage() {
           <label className="block text-sm font-medium text-slate-700 mb-2">Représentant légal</label>
           <input name="representant" defaultValue={assoc.representant || ""} placeholder="Jean Dupont, Président"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+        </div>
+
+        {/* Numérotation CERFA */}
+        <div className="border-t border-slate-100 pt-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Hash size={15} className="text-slate-400" />
+            <p className="text-sm font-semibold text-slate-700">Numérotation des CERFA</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Numéro de départ</label>
+            <p className="text-xs text-slate-400 mb-2">
+              Le prochain CERFA créé sera au minimum ce numéro. Laissez à 0 pour la numérotation automatique.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                type="number" name="cerfaSequence" min="0" step="1"
+                defaultValue={assoc.cerfaSequence ?? 0}
+                className="w-40 px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              <span className="text-sm text-slate-400">
+                → prochain : <strong className="text-slate-700">A{new Date().getFullYear()}/{String((assoc.cerfaSequence || 1)).padStart(5, "0")}</strong>
+              </span>
+            </div>
+          </div>
         </div>
 
         {saved && (

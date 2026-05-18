@@ -244,6 +244,20 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
     } catch { /* ignoré */ }
   }
 
+  // Nom et qualité du signataire (mention légale obligatoire)
+  if (data.association.representant) {
+    const repSz = 7.5;
+    const repLines = wrapText(data.association.representant, F, repSz, 130);
+    repLines.slice(0, 2).forEach((line, i) => {
+      const lw = F.widthOfTextAtSize(line, repSz);
+      page.drawText(line, {
+        x: 413 + (140 - lw) / 2,
+        y: 88 - i * 10,
+        size: repSz, font: F, color: rgb(0.3, 0.3, 0.3),
+      });
+    });
+  }
+
   // Pied de page
   const foot = `Document généré conformément à l'article 200 du CGI — ${data.association.nom}`;
   const footSz = 7.5;

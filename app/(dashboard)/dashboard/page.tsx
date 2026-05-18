@@ -10,6 +10,7 @@ interface DashboardData {
   totalCerfa: number;
   totalDonsAnnee: number;
   cerfasAnnee: number;
+  totalDonateurs: number;
   derniersCerfa: {
     id: string;
     numeroCerfa: string;
@@ -49,7 +50,7 @@ export default function DashboardPage() {
     { label: "Total CERFA émis", value: data.totalCerfa, icon: FileText, color: "bg-blue-500", sub: "Tous temps" },
     { label: `CERFA ${data.annee}`, value: data.cerfasAnnee, icon: TrendingUp, color: "bg-emerald-500", sub: "Cette année" },
     { label: `Dons ${data.annee}`, value: formatMontant(data.totalDonsAnnee), icon: Euro, color: "bg-violet-500", sub: "Cette année" },
-    { label: "Donateurs", value: "—", icon: Users, color: "bg-orange-500", sub: "Actifs" },
+    { label: "Donateurs", value: data.totalDonateurs, icon: Users, color: "bg-orange-500", sub: "Enregistrés" },
   ];
 
   return (

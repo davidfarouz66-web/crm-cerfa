@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateCerfaPDF } from "@/lib/pdf";
-import { writeFile, unlink, mkdir } from "fs/promises";
-import { existsSync } from "fs";
-import path from "path";
+import { generateMecenaPDF } from "@/lib/pdf-mecena";
+import { uploadPDF } from "@/lib/storage";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -33,8 +32,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     include: { donateur: true },
   });
 
-  // Regénère le PDF avec les nouvelles données
-  const pdfBytes = await generateCerfaPDF({
+  const pdfData = {
     numeroCerfa:  updated.numeroCerfa,
     donateur:     updated.donateur,
     dateDon:      updated.dateDon,
@@ -43,12 +41,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     objetDon:     updated.objetDon,
     dateEmission: updated.dateEmission,
     association,
-  });
+  };
+  const pdfBytes = updated.donateur.type === "entreprise"
+    ? await generateMecenaPDF(pdfData)
+    : await generateCerfaPDF(pdfData);
 
-  const storageDir = path.join(process.cwd(), "public", "storage", "cerfa");
-  await mkdir(storageDir, { recursive: true });
   const fileName = `${updated.numeroCerfa.replace("/", "-")}.pdf`;
-  await writeFile(path.join(storageDir, fileName), pdfBytes);
+  await uploadPDF(fileName, pdfBytes);
 
   return NextResponse.json(updated);
 }
@@ -58,11 +57,6 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
   const cerfa = await prisma.cerfa.findUnique({ where: { id } });
   if (!cerfa) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
 
-  if (cerfa.pdfPath) {
-    const filePath = path.join(process.cwd(), "public", cerfa.pdfPath);
-    if (existsSync(filePath)) await unlink(filePath).catch(() => {});
-  }
-
-  await prisma.cerfa.delete({ where: { id } });
+  await prisma.cerfa.update({ where: { id }, data: { status: "annulé" } });
   return NextResponse.json({ ok: true });
 }

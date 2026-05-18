@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, FilePlus, Download, ChevronRight } from "lucide-react";
+import { Search, FilePlus, Download, ChevronRight, CheckCircle, Clock, Ban } from "lucide-react";
 import { formatMontant, formatDate } from "@/lib/utils";
 
 interface Cerfa {
@@ -12,6 +12,8 @@ interface Cerfa {
   dateDon: string;
   modePaiement: string;
   pdfPath?: string;
+  sentAt?: string | null;
+  status: string;
   donateur: { nom: string; prenom?: string; raisonSociale?: string; type: string };
 }
 
@@ -68,13 +70,16 @@ export default function CerfaListPage() {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-50">
           {cerfas.map((c) => (
-            <div key={c.id} className="flex items-center justify-between p-4">
+            <div key={c.id} className={`flex items-center justify-between p-4 ${c.status === "annulé" ? "opacity-50" : ""}`}>
               <Link href={`/cerfa/${c.id}`} className="flex-1 flex items-center gap-4 hover:opacity-80 transition-opacity">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
-                  <span className="text-blue-600 text-xs font-bold">PDF</span>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${c.status === "annulé" ? "bg-red-50" : "bg-blue-50"}`}>
+                  {c.status === "annulé"
+                    ? <Ban size={14} className="text-red-400" />
+                    : <span className="text-blue-600 text-xs font-bold">PDF</span>
+                  }
                 </div>
                 <div className="min-w-0">
-                  <p className="font-medium text-slate-800 text-sm">{c.numeroCerfa}</p>
+                  <p className={`font-medium text-sm ${c.status === "annulé" ? "text-slate-400 line-through" : "text-slate-800"}`}>{c.numeroCerfa}</p>
                   <p className="text-xs text-slate-500 mt-0.5 truncate">{getNom(c.donateur)}</p>
                 </div>
               </Link>
@@ -83,6 +88,19 @@ export default function CerfaListPage() {
                   <p className="font-semibold text-slate-800 text-sm">{formatMontant(c.montant)}</p>
                   <p className="text-xs text-slate-400">{formatDate(c.dateDon)} · {modeLabel[c.modePaiement]}</p>
                 </div>
+                {c.status === "annulé" ? (
+                  <span className="hidden sm:flex items-center gap-1 text-xs font-medium text-red-500 bg-red-50 px-2.5 py-1 rounded-full">
+                    <Ban size={12} /> Annulé
+                  </span>
+                ) : c.sentAt ? (
+                  <span className="hidden sm:flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                    <CheckCircle size={12} /> Envoyé
+                  </span>
+                ) : (
+                  <span className="hidden sm:flex items-center gap-1 text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">
+                    <Clock size={12} /> Non envoyé
+                  </span>
+                )}
                 {c.pdfPath && (
                   <a href={c.pdfPath} target="_blank" rel="noopener noreferrer"
                     className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">

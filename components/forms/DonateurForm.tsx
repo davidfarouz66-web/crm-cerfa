@@ -105,6 +105,21 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
               <input name="raisonSociale" defaultValue={initial.raisonSociale || ""} placeholder="SARL Exemple" required
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Forme juridique</label>
+              <select name="formeJuridique" defaultValue={(initial as { formeJuridique?: string }).formeJuridique || ""}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
+                <option value="">Sélectionner...</option>
+                {["SARL","SAS","SASU","SA","SCI","EURL","Auto-entrepreneur","Association","Fondation","Autre"].map((f) => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">SIREN</label>
+              <input name="siretDonateur" defaultValue={(initial as { siretDonateur?: string }).siretDonateur || ""} placeholder="123 456 789"
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+            </div>
             <div className="sm:col-span-2">
               <label className="block text-sm font-medium text-slate-700 mb-2">Nom du contact</label>
               <input name="nom" defaultValue={initial.nom || ""} placeholder="Nom du représentant"

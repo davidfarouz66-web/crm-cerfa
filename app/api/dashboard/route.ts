@@ -6,26 +6,30 @@ export async function GET() {
   const debut = new Date(`${annee}-01-01`);
   const fin = new Date(`${annee}-12-31`);
 
-  const [totalCerfa, totalDons, cerfasAnnee, derniersCerfa, parMois, parMode] = await Promise.all([
-    prisma.cerfa.count(),
-    prisma.cerfa.aggregate({ _sum: { montant: true }, where: { dateDon: { gte: debut, lte: fin } } }),
-    prisma.cerfa.count({ where: { dateDon: { gte: debut, lte: fin } } }),
+  const actif = { status: "actif" };
+
+  const [totalCerfa, totalDons, cerfasAnnee, totalDonateurs, derniersCerfa, parMois, parMode] = await Promise.all([
+    prisma.cerfa.count({ where: actif }),
+    prisma.cerfa.aggregate({ _sum: { montant: true }, where: { ...actif, dateDon: { gte: debut, lte: fin } } }),
+    prisma.cerfa.count({ where: { ...actif, dateDon: { gte: debut, lte: fin } } }),
+    prisma.donateur.count(),
     prisma.cerfa.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
+      where: actif,
       include: { donateur: true },
     }),
     prisma.cerfa.groupBy({
       by: ["dateDon"],
       _sum: { montant: true },
       _count: true,
-      where: { dateDon: { gte: debut, lte: fin } },
+      where: { ...actif, dateDon: { gte: debut, lte: fin } },
     }),
     prisma.cerfa.groupBy({
       by: ["modePaiement"],
       _sum: { montant: true },
       _count: true,
-      where: { dateDon: { gte: debut, lte: fin } },
+      where: { ...actif, dateDon: { gte: debut, lte: fin } },
     }),
   ]);
 
@@ -49,6 +53,7 @@ export async function GET() {
     totalCerfa,
     totalDonsAnnee: totalDons._sum.montant || 0,
     cerfasAnnee,
+    totalDonateurs,
     derniersCerfa,
     chartMois,
     parMode,

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Pencil, FilePlus, Download, Mail, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, Pencil, FilePlus, Download, Mail, Phone, MapPin, CheckCircle, Clock } from "lucide-react";
 import { formatMontant, formatDate } from "@/lib/utils";
 
 const modeLabel: Record<string, string> = {
@@ -107,6 +107,15 @@ export default async function DonateurPage({ params }: { params: Promise<{ id: s
               </div>
               <div className="flex items-center gap-3">
                 <p className="font-semibold text-slate-800">{formatMontant(c.montant)}</p>
+                {c.sentAt ? (
+                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                    <CheckCircle size={11} /> Envoyé
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                    <Clock size={11} /> Non envoyé
+                  </span>
+                )}
                 {c.pdfPath && (
                   <a href={c.pdfPath} target="_blank" rel="noopener noreferrer"
                     className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">

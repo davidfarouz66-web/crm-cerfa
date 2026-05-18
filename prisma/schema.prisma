@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model User {
@@ -34,6 +34,7 @@ model Association {
   logoUrl          String?
   signatureUrl     String?
   cachetUrl        String?
+  cerfaSequence    Int      @default(0)
   tenantId         String   @default("default")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -46,6 +47,8 @@ model Donateur {
   nom           String
   prenom        String?
   raisonSociale String?
+  formeJuridique String?
+  siretDonateur  String?
   adresse       String?
   codePostal    String?
   ville         String?
@@ -70,6 +73,8 @@ model Cerfa {
   objetDon       String?
   dateEmission   DateTime @default(now())
   pdfPath        String?
+  sentAt         DateTime?
+  status         String    @default("actif")
   tenantId       String   @default("default")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

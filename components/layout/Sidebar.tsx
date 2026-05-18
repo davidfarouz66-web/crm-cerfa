@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, FilePlus, FileText,
-  BarChart3, Settings, LogOut, Heart,
+  BarChart3, Settings, LogOut, Heart, Upload,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -14,6 +14,7 @@ const navItems = [
   { href: "/cerfa/nouveau", label: "Nouveau CERFA", icon: FilePlus },
   { href: "/cerfa", label: "Liste CERFA", icon: FileText },
   { href: "/recapitulatif", label: "Récapitulatif", icon: BarChart3 },
+  { href: "/import", label: "Import CSV", icon: Upload },
   { href: "/parametres", label: "Paramètres", icon: Settings },
 ];
 

@@ -47,10 +47,10 @@ function addField(name, x, y, w, h, opts = {}) {
 }
 
 // ── Bloc donateur haut droite — alignement parfait, sans labels ──────────────
-// Les 3 champs partent du même x=315, pleine largeur jusqu'à x=548
-addField("donateur_nom",      315, 692, 233, 14, { whiteBg: true, bold: true });
-addField("donateur_adresse",  315, 679, 233, 13, { whiteBg: true });
-addField("donateur_ville",    315, 666, 233, 11, { whiteBg: true });
+// Les 3 champs partent du même x=425, pleine largeur jusqu'à x=548
+addField("donateur_nom",      425, 692, 123, 14, { whiteBg: true, bold: true });
+addField("donateur_adresse",  425, 679, 123, 13, { whiteBg: true });
+addField("donateur_ville",    425, 666, 123, 11, { whiteBg: true });
 
 // ── Section Bénéficiaire — alignés sur le label le plus long ────────────────
 // "ADRESSE DE L'ASSOCIATION :" finit à ≈x=228 → tous les champs partent de x=228

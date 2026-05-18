@@ -1,0 +1,14 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm run build"
+
+[deploy]
+startCommand = "npx prisma migrate deploy && npm start"
+restartPolicyType = "on_failure"
+
+[environments.production.variables]
+NODE_ENV = "production"
+NEXTAUTH_URL = "https://${{RAILWAY_PUBLIC_DOMAIN}}"
+DATABASE_URL = "file:/data/database.db"
+DATABASE_PATH = "/data/database.db"
+STORAGE_DIR = "/data/storage"
