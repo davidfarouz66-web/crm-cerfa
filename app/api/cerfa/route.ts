@@ -1,5 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { generateNumeroCerfa } from "@/lib/utils";
 import { generateCerfaPDF } from "@/lib/pdf";
@@ -36,12 +38,53 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   const body = await req.json();
+  const session = await getServerSession(authOptions);
 
   const annee = new Date(body.dateDon).getFullYear();
 
   const association = await prisma.association.findFirst();
   if (!association) {
     return NextResponse.json({ error: "Association non configurée" }, { status: 400 });
+  }
+
+  // Vérification éligibilité
+  if (!association.organismeEligibleMecenat) {
+    return NextResponse.json({
+      error: "L'association n'est pas marquée comme éligible au mécénat. Vérifiez les paramètres association.",
+      code: "NOT_ELIGIBLE",
+    }, { status: 400 });
+  }
+
+  // Vérification chronologique de la date d'émission
+  const dateEmission = body.dateEmission ? new Date(body.dateEmission) : new Date();
+  const dernierCerfa = await prisma.cerfa.findFirst({
+    where: { status: "actif" },
+    orderBy: { dateEmission: "desc" },
+  });
+  if (dernierCerfa && dateEmission < dernierCerfa.dateEmission) {
+    // Dérogation autorisée si motif fourni
+    if (!body.derogationMotif?.trim()) {
+      return NextResponse.json({
+        code: "NOT_CHRONOLOGICAL",
+        error: "Date d'émission antérieure au dernier reçu actif.",
+        dernierNumero: dernierCerfa.numeroCerfa,
+        dernierDate: dernierCerfa.dateEmission.toLocaleDateString("fr-FR"),
+      }, { status: 400 });
+    }
+    // Journaliser la dérogation
+    await prisma.auditLog.create({
+      data: {
+        userId: (session?.user as { id?: string })?.id ?? null,
+        action: "DEROGATION_CHRONOLOGIQUE",
+        entityType: "Cerfa",
+        entityId: dernierCerfa.id,
+        newValues: JSON.stringify({
+          dateEmissionDemandee: dateEmission.toISOString(),
+          dernierCerfa: dernierCerfa.numeroCerfa,
+          motif: body.derogationMotif,
+        }),
+      },
+    }).catch(() => {});
   }
 
   // Calcul du prochain numéro de séquence pour l'année
@@ -73,9 +116,23 @@ export async function POST(req: Request) {
       montant: parseFloat(body.montant),
       modePaiement: body.modePaiement,
       objetDon: body.objetDon || null,
-      dateEmission: new Date(),
+      natureDon: body.natureDon || "numeraire",
+      formeDon: body.formeDon || "declaration_manuel",
+      articleFiscal: body.articleFiscal || association.articlesFiscauxAutorises || "200",
+      dateEmission,
     },
   });
+
+  // Audit log
+  await prisma.auditLog.create({
+    data: {
+      userId: (session?.user as { id?: string })?.id ?? null,
+      action: "CREATE_CERFA",
+      entityType: "Cerfa",
+      entityId: cerfa.id,
+      newValues: JSON.stringify({ numeroCerfa, montant: cerfa.montant, donateurId: cerfa.donateurId }),
+    },
+  }).catch(() => {});
 
   const pdfData = {
     numeroCerfa,
@@ -84,7 +141,7 @@ export async function POST(req: Request) {
     montant: parseFloat(body.montant),
     modePaiement: body.modePaiement,
     objetDon: body.objetDon || null,
-    dateEmission: new Date(),
+    dateEmission,
     association,
   };
   let pdfBytes: Uint8Array;

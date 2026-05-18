@@ -27,6 +27,17 @@ export async function PUT(req: Request) {
       logoUrl:          str(body.logoUrl),
       signatureUrl:     str(body.signatureUrl),
       cerfaSequence:    parseInt(String(body.cerfaSequence ?? 0), 10) || 0,
+      // Éligibilité fiscale
+      organismeEligibleMecenat:    body.organismeEligibleMecenat === true || body.organismeEligibleMecenat === "true",
+      articlesFiscauxAutorises:    str(body.articlesFiscauxAutorises) || "200",
+      typeOrganisme:               str(body.typeOrganisme),
+      dateVerificationEligibilite: body.dateVerificationEligibilite ? new Date(body.dateVerificationEligibilite) : null,
+      commentaireEligibilite:      str(body.commentaireEligibilite),
+      responsableLegalNom:         str(body.responsableLegalNom),
+      responsableLegalFonction:    str(body.responsableLegalFonction),
+      // RGPD
+      dureConservationAnnees:      parseInt(String(body.dureConservationAnnees ?? 10), 10) || 10,
+      contactRgpd:                 str(body.contactRgpd),
     };
 
     const existing = await prisma.association.findFirst();

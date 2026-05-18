@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 
 interface DonateurFormProps {
   initial?: {
@@ -14,9 +14,15 @@ interface DonateurFormProps {
     adresse?: string;
     codePostal?: string;
     ville?: string;
+    pays?: string;
     email?: string;
     telephone?: string;
     notes?: string;
+    consentementProspection?: boolean;
+    dateConsentement?: string;
+    oppositionProspection?: boolean;
+    notesRgpd?: string;
+    [key: string]: unknown;
   };
   mode: "create" | "edit";
 }
@@ -26,6 +32,8 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [type, setType] = useState(initial.type || "particulier");
+  const [consentement, setConsentement] = useState(!!initial.consentementProspection);
+  const [opposition, setOpposition] = useState(!!initial.oppositionProspection);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -40,7 +48,7 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, consentementProspection: consentement, oppositionProspection: opposition }),
     });
 
     setLoading(false);
@@ -176,6 +184,35 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
         <textarea name="notes" defaultValue={initial.notes || ""} rows={3}
           placeholder="Informations complémentaires..."
           className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
+      </div>
+
+      {/* RGPD */}
+      <div className="border-t border-slate-100 pt-4 space-y-3">
+        <p className="text-sm font-semibold text-slate-700 flex items-center gap-2"><Lock size={14} className="text-slate-400" /> RGPD</p>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={consentement} onChange={(e) => setConsentement(e.target.checked)}
+            className="w-4 h-4 rounded text-blue-600" />
+          <span className="text-sm text-slate-700">Consentement à la prospection</span>
+        </label>
+        {consentement && (
+          <div>
+            <label className="block text-xs text-slate-500 mb-1">Date du consentement</label>
+            <input type="date" name="dateConsentement"
+              defaultValue={initial.dateConsentement ? String(initial.dateConsentement).split("T")[0] : new Date().toISOString().split("T")[0]}
+              className="px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+        )}
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" checked={opposition} onChange={(e) => setOpposition(e.target.checked)}
+            className="w-4 h-4 rounded text-red-500" />
+          <span className="text-sm text-slate-700">Opposition à la prospection</span>
+        </label>
+        <div>
+          <label className="block text-xs text-slate-500 mb-1">Notes RGPD</label>
+          <textarea name="notesRgpd" defaultValue={initial.notesRgpd || ""} rows={2}
+            placeholder="Ex. : demande d'effacement reçue le..."
+            className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+        </div>
       </div>
 
       {error && (

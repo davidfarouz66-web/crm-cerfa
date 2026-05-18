@@ -31,10 +31,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         adresse:        str(body.adresse),
         codePostal:    str(body.codePostal),
         ville:         str(body.ville),
-        pays:          str(body.pays) || "France",
-        email:         str(body.email),
-        telephone:     str(body.telephone),
-        notes:         str(body.notes),
+        pays:                   str(body.pays) || "France",
+        email:                  str(body.email),
+        telephone:              str(body.telephone),
+        notes:                  str(body.notes),
+        consentementProspection: body.consentementProspection === true || body.consentementProspection === "true",
+        dateConsentement:        body.dateConsentement ? new Date(body.dateConsentement) : null,
+        oppositionProspection:   body.oppositionProspection === true || body.oppositionProspection === "true",
+        notesRgpd:               str(body.notesRgpd),
       },
     });
     return NextResponse.json(donateur);

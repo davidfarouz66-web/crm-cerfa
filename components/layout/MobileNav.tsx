@@ -20,21 +20,22 @@ export default function MobileNav() {
   return (
     <>
       {open && (
-        <div className="fixed inset-0 bottom-14 z-40 md:hidden" onClick={() => setOpen(false)}>
-          <div className="absolute bottom-16 right-3 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden w-52">
-            <Link href="/recapitulatif" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-              <BarChart3 size={17} className="text-slate-400" /> Bilan
-            </Link>
-            <Link href="/parametres" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50">
-              <Settings size={17} className="text-slate-400" /> Paramètres
-            </Link>
-            <button onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-slate-100 w-full">
-              <LogOut size={17} /> Déconnexion
-            </button>
-          </div>
+        <div className="fixed inset-0 z-40 md:hidden" onClick={() => setOpen(false)} />
+      )}
+      {open && (
+        <div className="fixed bottom-14 right-3 z-50 md:hidden bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden w-52">
+          <Link href="/recapitulatif" onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+            <BarChart3 size={17} className="text-slate-400" /> Bilan
+          </Link>
+          <Link href="/parametres" onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50">
+            <Settings size={17} className="text-slate-400" /> Paramètres
+          </Link>
+          <button onClick={() => { setOpen(false); signOut({ callbackUrl: "/login" }); }}
+            className="flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-slate-100 w-full">
+            <LogOut size={17} /> Déconnexion
+          </button>
         </div>
       )}
 

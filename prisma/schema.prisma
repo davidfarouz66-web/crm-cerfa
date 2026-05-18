@@ -36,6 +36,17 @@ model Association {
   signatureUrl     String?
   cachetUrl        String?
   cerfaSequence    Int      @default(0)
+  // Éligibilité fiscale
+  organismeEligibleMecenat    Boolean  @default(false)
+  articlesFiscauxAutorises    String?  @default("200")
+  typeOrganisme               String?
+  dateVerificationEligibilite DateTime?
+  commentaireEligibilite      String?
+  responsableLegalNom         String?
+  responsableLegalFonction    String?
+  // RGPD
+  dureConservationAnnees      Int      @default(10)
+  contactRgpd                 String?
   tenantId         String   @default("default")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -57,6 +68,11 @@ model Donateur {
   email         String?
   telephone     String?
   notes         String?
+  // RGPD
+  consentementProspection Boolean  @default(false)
+  dateConsentement        DateTime?
+  oppositionProspection   Boolean  @default(false)
+  notesRgpd               String?
   tenantId      String   @default("default")
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -72,10 +88,15 @@ model Cerfa {
   montant        Float
   modePaiement   String
   objetDon       String?
+  natureDon      String   @default("numeraire")
+  formeDon       String   @default("declaration_manuel")
+  articleFiscal  String   @default("200")
   dateEmission   DateTime @default(now())
   pdfPath        String?
   sentAt         DateTime?
-  status         String    @default("actif")
+  status         String   @default("actif")
+  motifAnnulation String?
+  dateAnnulation  DateTime?
   tenantId       String   @default("default")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
