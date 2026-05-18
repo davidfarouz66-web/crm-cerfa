@@ -118,6 +118,7 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">SIREN</label>
               <input name="siretDonateur" defaultValue={(initial as { siretDonateur?: string }).siretDonateur || ""} placeholder="123 456 789"
+                inputMode="numeric"
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
             </div>
             <div className="sm:col-span-2">
@@ -139,6 +140,7 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Code postal</label>
           <input name="codePostal" defaultValue={initial.codePostal || ""} placeholder="75001"
+            inputMode="numeric"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
         </div>
         <div>
@@ -146,6 +148,11 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
           <input name="ville" defaultValue={initial.ville || ""} placeholder="Paris"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
         </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Pays</label>
+        <input name="pays" defaultValue={(initial as { pays?: string }).pays || "France"} placeholder="France"
+          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
       </div>
 
       {/* Contact */}
@@ -157,7 +164,8 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Téléphone</label>
-          <input name="telephone" defaultValue={initial.telephone || ""} placeholder="06 00 00 00 00"
+          <input type="tel" name="telephone" defaultValue={initial.telephone || ""} placeholder="06 00 00 00 00"
+            inputMode="tel"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
         </div>
       </div>
@@ -174,7 +182,7 @@ export default function DonateurForm({ initial = {}, mode }: DonateurFormProps) 
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">{error}</div>
       )}
 
-      <div className="flex gap-3 pt-2">
+      <div className="flex gap-3 pt-2 pb-6">
         <button type="button" onClick={() => router.back()}
           className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-slate-600 font-medium hover:bg-slate-50 transition-colors text-sm">
           Annuler

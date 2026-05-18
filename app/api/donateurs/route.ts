@@ -41,6 +41,7 @@ export async function POST(req: Request) {
         adresse:        str(body.adresse),
         codePostal:    str(body.codePostal),
         ville:         str(body.ville),
+        pays:          str(body.pays) || "France",
         email:         str(body.email),
         telephone:     str(body.telephone),
         notes:         str(body.notes),

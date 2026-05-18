@@ -31,6 +31,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         adresse:        str(body.adresse),
         codePostal:    str(body.codePostal),
         ville:         str(body.ville),
+        pays:          str(body.pays) || "France",
         email:         str(body.email),
         telephone:     str(body.telephone),
         notes:         str(body.notes),
