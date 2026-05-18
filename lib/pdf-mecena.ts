@@ -1,6 +1,21 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { existsSync, readFileSync } from "fs";
 import path from "path";
+
+async function loadImageBytes(src: string): Promise<{ bytes: Buffer; ext: string } | null> {
+  try {
+    if (src.startsWith("http")) {
+      const res = await fetch(src);
+      if (!res.ok) return null;
+      const buf = Buffer.from(await res.arrayBuffer());
+      const ext = src.split("?")[0].split(".").pop()?.toLowerCase() || "png";
+      return { bytes: buf, ext };
+    }
+    const lp = path.join(process.cwd(), "public", src);
+    if (!existsSync(lp)) return null;
+    return { bytes: readFileSync(lp), ext: lp.split(".").pop()?.toLowerCase() || "png" };
+  } catch { return null; }
+}
 import { montantEnLettres } from "./pdf";
 
 const NAVY  = rgb(0.09, 0.19, 0.44);
@@ -146,11 +161,9 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const logoSrc = data.association.logoUrl?.split("?")[0];
   if (logoSrc) {
     try {
-      const lp = path.join(process.cwd(), "public", logoSrc);
-      if (existsSync(lp)) {
-        const lb = readFileSync(lp);
-        const ext = lp.split(".").pop()?.toLowerCase();
-        const li  = (ext === "jpg" || ext === "jpeg") ? await doc.embedJpg(lb) : await doc.embedPng(lb);
+      const img = await loadImageBytes(logoSrc);
+      if (img) {
+        const li  = (img.ext === "jpg" || img.ext === "jpeg") ? await doc.embedJpg(img.bytes) : await doc.embedPng(img.bytes);
         const sc  = Math.min(50 / li.width, 34 / li.height);
         const lw  = li.width * sc, lh = li.height * sc;
         page.drawImage(li, { x: 116, y: 779 - lh / 2, width: lw, height: lh });
@@ -316,11 +329,9 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const sigSrc = data.association.signatureUrl?.split("?")[0];
   if (sigSrc) {
     try {
-      const sp = path.join(process.cwd(), "public", sigSrc);
-      if (existsSync(sp)) {
-        const sb  = readFileSync(sp);
-        const ext = sp.split(".").pop()?.toLowerCase();
-        const si  = (ext === "jpg" || ext === "jpeg") ? await doc.embedJpg(sb) : await doc.embedPng(sb);
+      const img = await loadImageBytes(sigSrc);
+      if (img) {
+        const si  = (img.ext === "jpg" || img.ext === "jpeg") ? await doc.embedJpg(img.bytes) : await doc.embedPng(img.bytes);
         const sc  = Math.min(120 / si.width, 44 / si.height);
         const sw  = si.width * sc, sh = si.height * sc;
         const sigBoxW = W - 28 - 286;

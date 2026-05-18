@@ -2,6 +2,21 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { existsSync, readFileSync } from "fs";
 import path from "path";
 
+async function loadImageBytes(src: string): Promise<{ bytes: Buffer; ext: string } | null> {
+  try {
+    if (src.startsWith("http")) {
+      const res = await fetch(src);
+      if (!res.ok) return null;
+      const buf = Buffer.from(await res.arrayBuffer());
+      const ext = src.split("?")[0].split(".").pop()?.toLowerCase() || "png";
+      return { bytes: buf, ext };
+    }
+    const lp = path.join(process.cwd(), "public", src);
+    if (!existsSync(lp)) return null;
+    return { bytes: readFileSync(lp), ext: lp.split(".").pop()?.toLowerCase() || "png" };
+  } catch { return null; }
+}
+
 // ─── Montant en lettres ───────────────────────────────────────────────────────
 const U = ['','un','deux','trois','quatre','cinq','six','sept','huit','neuf',
   'dix','onze','douze','treize','quatorze','quinze','seize','dix-sept','dix-huit','dix-neuf'];
@@ -142,11 +157,9 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   let assocNameY = 703;
   if (logoSrc) {
     try {
-      const lp = path.join(process.cwd(), 'public', logoSrc);
-      if (existsSync(lp)) {
-        const lb = readFileSync(lp);
-        const ext = lp.split('.').pop()?.toLowerCase();
-        const li = (ext === 'jpg' || ext === 'jpeg') ? await doc.embedJpg(lb) : await doc.embedPng(lb);
+      const img = await loadImageBytes(logoSrc);
+      if (img) {
+        const li = (img.ext === 'jpg' || img.ext === 'jpeg') ? await doc.embedJpg(img.bytes) : await doc.embedPng(img.bytes);
         const sc = Math.min(100 / li.width, 40 / li.height);
         const lw = li.width * sc, lh = li.height * sc;
         page.drawImage(li, { x: 45, y: 738 - lh, width: lw, height: lh });
@@ -232,11 +245,9 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   const sigSrc = data.association.signatureUrl?.split('?')[0];
   if (sigSrc) {
     try {
-      const sp = path.join(process.cwd(), 'public', sigSrc);
-      if (existsSync(sp)) {
-        const sb = readFileSync(sp);
-        const ext = sp.split('.').pop()?.toLowerCase();
-        const si = (ext === 'jpg' || ext === 'jpeg') ? await doc.embedJpg(sb) : await doc.embedPng(sb);
+      const img = await loadImageBytes(sigSrc);
+      if (img) {
+        const si = (img.ext === 'jpg' || img.ext === 'jpeg') ? await doc.embedJpg(img.bytes) : await doc.embedPng(img.bytes);
         const sc = Math.min(130 / si.width, 56 / si.height);
         const sw = si.width * sc, sh = si.height * sc;
         page.drawImage(si, { x: 413 + (140 - sw) / 2, y: 98 + (40 - sh) / 2, width: sw, height: sh });
