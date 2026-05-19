@@ -119,7 +119,7 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   const MX   = 28;
 
   const txt = (text: string, x: number, y: number, sz: number, font = F, color = BLK) =>
-    page.drawText(String(text), { x, y, size: sz, font, color });
+    page.drawText(String(text).replace(/[\r\n\t]/g, " ").trim(), { x, y, size: sz, font, color });
 
   const box = (x: number, y: number, w: number, h: number, fill = LGREY) =>
     page.drawRectangle({ x, y, width: w, height: h, color: fill, borderColor: BORDER, borderWidth: 0.6 });
