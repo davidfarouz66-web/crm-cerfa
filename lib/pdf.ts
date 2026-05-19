@@ -66,14 +66,14 @@ function wrapText(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-//  COULEURS — palette teal (différente de la référence grise)
+//  COULEURS — bleu marine sur fond blanc
 // ─────────────────────────────────────────────────────────────────────────────
-const TEAL   = rgb(0.07, 0.47, 0.47);   // sections, labels
+const TEAL   = rgb(0.09, 0.19, 0.44);   // bleu marine — sections, labels
 const BLK    = rgb(0,    0,    0   );
 const WHT    = rgb(1,    1,    1   );
 const GREY   = rgb(0.45, 0.45, 0.45);
-const LGREY  = rgb(0.94, 0.97, 0.97);   // fond boîtes
-const BORDER = rgb(0.65, 0.82, 0.80);   // bordures
+const LGREY  = rgb(0.96, 0.97, 1.00);   // fond boîtes bleu très clair
+const BORDER = rgb(0.70, 0.75, 0.88);   // bordures bleutées
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  TYPES
