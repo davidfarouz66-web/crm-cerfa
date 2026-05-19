@@ -184,7 +184,7 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   const oval = `M ${orx} 0 C ${orx+k*orx} 0,${ow} ${ory-k*ory},${ow} ${ory} C ${ow} ${ory+k*ory},${orx+k*orx} ${oh},${orx} ${oh} C ${orx-k*orx} ${oh},0 ${ory+k*ory},0 ${ory} C 0 ${ory-k*ory},${orx-k*orx} 0,${orx} 0 Z`;
   page.drawSvgPath(oval, { x: ox, y: oyt, borderColor: TEAL, borderWidth: 1, color: WHT });
   const cwi = FI.widthOfTextAtSize("cerfa", 9);
-  txt("cerfa", ox + (ow - cwi)/2, oyt + 3, 9, FI, TEAL);
+  txt("cerfa", ox + (ow - cwi)/2, oyt - oh/2 - 3, 9, FI, TEAL);
 
   txt("N° 11580*05",              MX+6, headerY+36, 6, F, GREY);
   txt("Art. 200 et 978 C.G.I.",   MX+6, headerY+26, 6, F, GREY);
