@@ -154,44 +154,44 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const formeDon      = data.formeDon      || "declaration_manuel";
   const natureDon     = data.natureDon     || "numeraire";
 
-  let y = 842;
+  let y = 828; // marge haute ~14px
 
   // ────────────────────────────────────────────────────────────────────────────
-  //  1. EN-TÊTE
+  //  1. EN-TÊTE — rectangle unique pleine largeur, fond uniforme
   // ────────────────────────────────────────────────────────────────────────────
-  const headerH = 80;
+  const headerH = 82;
   const headerY = y - headerH;
-  page.drawRectangle({ x: MX, y: headerY, width: W-MX*2, height: headerH, color: WHT, borderColor: NAVY, borderWidth: 1 });
 
-  // Encart CERFA gauche
-  const encartW = 105;
-  page.drawRectangle({ x: MX, y: headerY, width: encartW, height: headerH, color: LGREY, borderWidth: 0 });
-  page.drawLine({ start: { x: MX+encartW, y: headerY }, end: { x: MX+encartW, y: headerY+headerH }, thickness: 0.6, color: BORDER });
+  // Un seul rectangle, fond blanc, bordure navy
+  page.drawRectangle({ x: 0, y: headerY, width: W, height: headerH, color: WHT, borderColor: NAVY, borderWidth: 1 });
 
-  txt("2041-MEC-SD", MX+6, headerY+66, 8, FB, NAVY);
+  // Séparateurs verticaux seulement (pas de fond coloré)
+  const encartW = 110;
+  const ordreW  = 130;
+  const ordreX  = W - ordreW;
+  page.drawLine({ start: { x: encartW, y: headerY }, end: { x: encartW, y: headerY+headerH }, thickness: 0.6, color: BORDER });
+  page.drawLine({ start: { x: ordreX,  y: headerY }, end: { x: ordreX,  y: headerY+headerH }, thickness: 0.6, color: BORDER });
 
-  // Oval cerfa
-  const ow = 54, oh = 17, ox = MX+6, oyt = headerY+60;
+  // Colonne gauche : ref CERFA
+  txt("2041-MEC-SD", 8, headerY+66, 8, FB, NAVY);
+
+  const ow = 54, oh = 17, ox = 8, oyt = headerY+60;
   const k = 0.552, orx = ow/2, ory = oh/2;
   const oval = `M ${orx} 0 C ${orx+k*orx} 0,${ow} ${ory-k*ory},${ow} ${ory} C ${ow} ${ory+k*ory},${orx+k*orx} ${oh},${orx} ${oh} C ${orx-k*orx} ${oh},0 ${ory+k*ory},0 ${ory} C 0 ${ory-k*ory},${orx-k*orx} 0,${orx} 0 Z`;
   page.drawSvgPath(oval, { x: ox, y: oyt, borderColor: NAVY, borderWidth: 1.2, color: WHT });
   const cwi = FI.widthOfTextAtSize("cerfa", 9.5);
   txt("cerfa", ox + (ow-cwi)/2, oyt - oh/2 - 3, 9.5, FI, NAVY);
 
-  txt("N° Cerfa : 16216*03",  MX+6, headerY+36, 6.5, F, GREY);
-  txt("Art. 238 bis C.G.I.", MX+6, headerY+26, 6.5, F, GREY);
-  txt("(Entreprises)",        MX+6, headerY+14, 6.5, F, GREY);
+  txt("N° Cerfa : 16216*03",  8, headerY+36, 6.5, F, GREY);
+  txt("Art. 238 bis C.G.I.", 8, headerY+26, 6.5, F, GREY);
+  txt("(Entreprises)",        8, headerY+14, 6.5, F, GREY);
 
-  // Boîte N° d'ordre droite
-  const ordreW = 125;
-  const ordreX = W - MX - ordreW;
-  page.drawRectangle({ x: ordreX, y: headerY, width: ordreW, height: headerH, color: LGREY, borderWidth: 0 });
-  page.drawLine({ start: { x: ordreX, y: headerY }, end: { x: ordreX, y: headerY+headerH }, thickness: 0.6, color: BORDER });
+  // Colonne droite : N° d'ordre
   txt("N° d'ordre du reçu", ordreX+6, headerY+64, 7, F, GREY);
   txt(data.numeroCerfa,     ordreX+6, headerY+44, 11.5, FB, NAVY);
 
-  // Titre centré
-  const midX = MX + encartW + (ordreX - MX - encartW) / 2;
+  // Titre centré dans la colonne du milieu
+  const midX = encartW + (ordreX - encartW) / 2;
   const t1 = "Reçu des dons et versements effectués par les entreprises";
   const t2 = "au titre de l'article 238 bis";
   const t3 = "du code général des impôts";
