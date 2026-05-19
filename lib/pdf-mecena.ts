@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { montantEnLettres } from "./pdf";
+import { montantEnLettres, clean } from "./pdf";
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  HELPERS
@@ -142,12 +142,14 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
     page.drawLine({ start: { x, y: y - 1.5 }, end: { x: x + w, y: y - 1.5 }, thickness: 0.6, color: BLK });
   };
 
-  // ── Données ──────────────────────────────────────────────────────────────────
-  const entName  = (data.donateur.raisonSociale || data.donateur.nom).toUpperCase();
-  const entAdr1  = data.donateur.adresse || "";
-  const entAdr2  = [data.donateur.codePostal, data.donateur.ville].filter(Boolean).join(" ");
-  const assocAdr = [data.association.adresse, [data.association.codePostal, data.association.ville].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-  const qualite  = data.association.qualiteOrganisme || "Œuvre ou organisme d'intérêt général";
+  // ── Données (nettoyage des caractères de contrôle) ───────────────────────────
+  const entName  = clean(data.donateur.raisonSociale || data.donateur.nom).toUpperCase();
+  const entAdr1  = clean(data.donateur.adresse);
+  const entAdr2  = [clean(data.donateur.codePostal), clean(data.donateur.ville)].filter(Boolean).join(" ");
+  const assocAdr = [clean(data.association.adresse), [clean(data.association.codePostal), clean(data.association.ville)].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const qualite  = clean(data.association.qualiteOrganisme) || "Œuvre ou organisme d'intérêt général";
+  const assocNom   = clean(data.association.nom);
+  const assocObjet = clean(data.association.objetSocial);
   const articleFiscal = data.articleFiscal || "238bis";
   const formeDon      = data.formeDon      || "declaration_manuel";
   const natureDon     = data.natureDon     || "numeraire";
@@ -226,9 +228,10 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
       }
     } catch { /* ignoré */ }
   }
-  txt(data.association.nom.toUpperCase(), logoEndX, idY + idH - 16, 9.5, FB, NAVY);
-  if (data.association.adresse) txt(data.association.adresse, logoEndX, idY + idH - 30, 8, F, GREY);
-  const assocVille = [data.association.codePostal, data.association.ville].filter(Boolean).join(" ");
+  txt(assocNom.toUpperCase(), logoEndX, idY + idH - 16, 9.5, FB, NAVY);
+  const assocAdr1 = clean(data.association.adresse);
+  if (assocAdr1) txt(assocAdr1, logoEndX, idY + idH - 30, 8, F, GREY);
+  const assocVille = [clean(data.association.codePostal), clean(data.association.ville)].filter(Boolean).join(" ");
   if (assocVille) txt(assocVille, logoEndX, idY + idH - 42, 8, F, GREY);
 
   // Entreprise (droite)
@@ -245,8 +248,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   bar(y - 20, "BÉNÉFICIAIRE DU DON");
   y -= 24;
 
-  const objetLines = data.association.objetSocial
-    ? wrapText(data.association.objetSocial, F, 8.5, 365) : [];
+  const objetLines = assocObjet ? wrapText(assocObjet, F, 8.5, 365) : [];
   const nObjLines = Math.min(3, objetLines.length);
 
   let benH = 14 + 14; // NOM + ADRESSE
@@ -256,7 +258,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   box(MX, y - benH, W - MX*2, benH);
 
   let fy = y - 13;
-  field("NOM OU DENOMINATION :", data.association.nom, MX+8, fy);
+  field("NOM OU DENOMINATION :", assocNom, MX+8, fy);
   fy -= 14;
   field("ADRESSE ASSOCIATION :", assocAdr, MX+8, fy);
   fy -= 14;
@@ -303,12 +305,13 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   bar(y - 20, "DONATEUR");
   y -= 24;
 
-  const siren = data.donateur.siretDonateur || "";
+  const siren = clean(data.donateur.siretDonateur);
+  const objetDon = clean(data.objetDon);
   const donRows: { label: string; value: string }[] = [
     { label: "DENOMINATION DE L'ENTREPRISE :", value: entName },
     { label: "ADRESSE :",                       value: [entAdr1, entAdr2].filter(Boolean).join(", ") || "—" },
     ...(siren ? [{ label: "NUMÉRO SIREN :", value: siren }] : []),
-    ...(data.objetDon ? [{ label: "OBJET DU DON :", value: data.objetDon }] : []),
+    ...(objetDon ? [{ label: "OBJET DU DON :", value: objetDon }] : []),
   ];
   const donBoxH = 10 + donRows.length * 16;
   box(MX, y - donBoxH, W - MX*2, donBoxH);
@@ -392,16 +395,17 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
     } catch { /* ignoré */ }
   }
 
-  if (data.association.representant) {
-    const rw = F.widthOfTextAtSize(data.association.representant, 7.5);
-    txt(data.association.representant, sigX + (sigW2 - rw)/2, y - 82, 7.5, F, GREY);
+  const representant = clean(data.association.representant);
+  if (representant) {
+    const rw = F.widthOfTextAtSize(representant, 7.5);
+    txt(representant, sigX + (sigW2 - rw)/2, y - 82, 7.5, F, GREY);
   }
 
   // ────────────────────────────────────────────────────────────────────────────
   //  8. PIED DE PAGE
   // ────────────────────────────────────────────────────────────────────────────
   page.drawLine({ start: { x: 0, y: 48 }, end: { x: W, y: 48 }, thickness: 0.5, color: BORDER });
-  const foot = `Document établi conformément à l'article 238 bis du CGI — ${data.association.nom}`;
+  const foot = `Document établi conformément à l'article 238 bis du CGI — ${assocNom}`;
   txt(foot, (W - F.widthOfTextAtSize(foot, 7))/2, 34, 7, F, GREY);
 
   return doc.save();

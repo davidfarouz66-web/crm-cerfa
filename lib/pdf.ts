@@ -4,6 +4,11 @@ import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 //  HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
+/** Supprime tous les caractères de contrôle (newlines, tabs, etc.) non encodables en WinAnsi */
+export function clean(s: string | null | undefined): string {
+  return (s ?? "").replace(/[\x00-\x1F\x7F]/g, " ").replace(/\s+/g, " ").trim();
+}
+
 async function loadImageBytes(src: string): Promise<{ bytes: Buffer; ext: string } | null> {
   try {
     if (!src.startsWith("http")) return null;
@@ -151,18 +156,21 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
     page.drawLine({ start: { x, y: y - 1.5 }, end: { x: x + w, y: y - 1.5 }, thickness: 0.6, color: BLK });
   };
 
-  // ── Données ──────────────────────────────────────────────────────────────────
+  // ── Données (nettoyage des caractères de contrôle) ───────────────────────────
   const dNom = data.donateur.type === "entreprise"
-    ? (data.donateur.raisonSociale || data.donateur.nom).toUpperCase()
-    : [data.donateur.civilite || "M.", data.donateur.prenom, data.donateur.nom].filter(Boolean).join(" ");
-  const dAdr1    = data.donateur.adresse || "";
-  const dAdr2    = [data.donateur.codePostal, data.donateur.ville].filter(Boolean).join(" ");
-  const assocAdr = [data.association.adresse, [data.association.codePostal, data.association.ville].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-  const siren    = data.association.rna || data.association.siret || "";
-  const qualite  = data.association.qualiteOrganisme || "Œuvre ou organisme d'intérêt général";
+    ? clean(data.donateur.raisonSociale || data.donateur.nom).toUpperCase()
+    : [clean(data.donateur.civilite) || "M.", clean(data.donateur.prenom), clean(data.donateur.nom)].filter(Boolean).join(" ");
+  const dAdr1    = clean(data.donateur.adresse);
+  const dAdr2    = [clean(data.donateur.codePostal), clean(data.donateur.ville)].filter(Boolean).join(" ");
+  const assocAdr = [clean(data.association.adresse), [clean(data.association.codePostal), clean(data.association.ville)].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const siren    = clean(data.association.rna || data.association.siret);
+  const qualite  = clean(data.association.qualiteOrganisme) || "Œuvre ou organisme d'intérêt général";
   const articleFiscal = data.articleFiscal || "200";
   const formeDon      = data.formeDon      || "declaration_manuel";
   const natureDon     = data.natureDon     || "numeraire";
+  // Nettoyage des champs association
+  const assocNom    = clean(data.association.nom);
+  const assocObjet  = clean(data.association.objetSocial);
 
   let y = 842;
 
@@ -257,8 +265,7 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   bar(y - 20, "BÉNÉFICIAIRE DU DON");
   y -= 24;
 
-  const objetLines = data.association.objetSocial
-    ? wrapText(data.association.objetSocial, F, 8.5, 365) : [];
+  const objetLines = assocObjet ? wrapText(assocObjet, F, 8.5, 365) : [];
   const nObjLines = Math.min(3, objetLines.length);
 
   let benH = 14 + 14; // NOM + ADRESSE
@@ -269,7 +276,7 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   box(MX, y - benH, W - MX*2, benH);
 
   let fy = y - 13;
-  field("NOM OU DENOMINATION :", data.association.nom, MX+8, fy);
+  field("NOM OU DENOMINATION :", assocNom, MX+8, fy);
   fy -= 14;
   if (siren) { field("NUMÉRO SIREN OU RNA :", siren, MX+8, fy); fy -= 14; }
   field("ADRESSE ASSOCIATION :", assocAdr, MX+8, fy);
@@ -400,16 +407,17 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
     } catch { /* ignoré */ }
   }
 
-  if (data.association.representant) {
-    const rw = F.widthOfTextAtSize(data.association.representant, 7.5);
-    txt(data.association.representant, sigX + (sigW2 - rw)/2, y - 82, 7.5, F, GREY);
+  const representant = clean(data.association.representant);
+  if (representant) {
+    const rw = F.widthOfTextAtSize(representant, 7.5);
+    txt(representant, sigX + (sigW2 - rw)/2, y - 82, 7.5, F, GREY);
   }
 
   // ────────────────────────────────────────────────────────────────────────────
   //  8. PIED DE PAGE
   // ────────────────────────────────────────────────────────────────────────────
   page.drawLine({ start: { x: 0, y: 48 }, end: { x: W, y: 48 }, thickness: 0.5, color: BORDER });
-  const foot = `Reçu établi conformément aux articles 200 et 978 du CGI — ${data.association.nom}`;
+  const foot = `Reçu établi conformément aux articles 200 et 978 du CGI — ${assocNom}`;
   txt(foot, (W - F.widthOfTextAtSize(foot, 7))/2, 34, 7, F, GREY);
 
   return doc.save();
