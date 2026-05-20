@@ -265,10 +265,11 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   const nObjLines = Math.min(3, objetLines.length);
 
   const benPad = 12; // padding haut = bas
-  let benH = 14 + 14; // NOM + ADRESSE
+  let benH = 14 + 14; // NOM + ADRESSE (correspond aux décréments de fy)
   if (siren) benH += 14;
-  if (objetLines.length > 0) benH += 13 + nObjLines * 12;
-  benH += 14 + benPad * 2; // QUALITE + padding symétrique
+  if (objetLines.length > 0) benH += Math.max(13, nObjLines * 12); // idem fy movement
+  // QUALITE est le dernier champ, pas de décrément → benPad gère l'espace bas
+  benH += benPad * 2;
 
   box(MX, y - benH, W - MX*2, benH);
 
