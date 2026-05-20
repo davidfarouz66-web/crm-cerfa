@@ -116,7 +116,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
     page.drawRectangle({ x, y, width: w, height: h, color: fill, borderColor: BORDER, borderWidth: 0.6 });
 
   const bar = (y: number, label: string, h = 20) => {
-    page.drawRectangle({ x: 0, y, width: W, height: h, color: NAVY, borderWidth: 0 });
+    page.drawRectangle({ x: MX, y, width: W-MX*2, height: h, color: NAVY, borderWidth: 0 });
     const lw = FB.widthOfTextAtSize(label, 9);
     txt(label, (W - lw) / 2, y + (h - 9) / 2 + 1, 9, FB, WHT);
   };
@@ -154,7 +154,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const formeDon      = data.formeDon      || "declaration_manuel";
   const natureDon     = data.natureDon     || "numeraire";
 
-  let y = 828; // marge haute ~14px
+  let y = 806; // marge haute ~36px
 
   // ────────────────────────────────────────────────────────────────────────────
   //  1. EN-TÊTE — rectangle unique pleine largeur, fond uniforme
@@ -162,29 +162,26 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const headerH = 82;
   const headerY = y - headerH;
 
-  // Un seul rectangle, fond blanc, bordure navy
-  page.drawRectangle({ x: 0, y: headerY, width: W, height: headerH, color: WHT, borderColor: NAVY, borderWidth: 1 });
+  // Rectangle unique, même largeur que le montant (MX de marge)
+  page.drawRectangle({ x: MX, y: headerY, width: W-MX*2, height: headerH, color: WHT, borderColor: NAVY, borderWidth: 1 });
 
-  // Séparateurs verticaux seulement (pas de fond coloré)
-  const encartW = 110;
+  const encartW = MX + 110;
   const ordreW  = 130;
-  const ordreX  = W - ordreW;
-  page.drawLine({ start: { x: encartW, y: headerY }, end: { x: encartW, y: headerY+headerH }, thickness: 0.6, color: BORDER });
-  page.drawLine({ start: { x: ordreX,  y: headerY }, end: { x: ordreX,  y: headerY+headerH }, thickness: 0.6, color: BORDER });
+  const ordreX  = W - MX - ordreW;
 
   // Colonne gauche : ref CERFA
-  txt("2041-MEC-SD", 8, headerY+66, 8, FB, NAVY);
+  txt("2041-MEC-SD", MX+10, headerY+66, 8, FB, NAVY);
 
-  const ow = 54, oh = 17, ox = 8, oyt = headerY+60;
+  const ow = 54, oh = 17, ox = MX+10, oyt = headerY+60;
   const k = 0.552, orx = ow/2, ory = oh/2;
   const oval = `M ${orx} 0 C ${orx+k*orx} 0,${ow} ${ory-k*ory},${ow} ${ory} C ${ow} ${ory+k*ory},${orx+k*orx} ${oh},${orx} ${oh} C ${orx-k*orx} ${oh},0 ${ory+k*ory},0 ${ory} C 0 ${ory-k*ory},${orx-k*orx} 0,${orx} 0 Z`;
   page.drawSvgPath(oval, { x: ox, y: oyt, borderColor: NAVY, borderWidth: 1.2, color: WHT });
   const cwi = FI.widthOfTextAtSize("cerfa", 9.5);
   txt("cerfa", ox + (ow-cwi)/2, oyt - oh/2 - 3, 9.5, FI, NAVY);
 
-  txt("N° Cerfa : 16216*03",  8, headerY+36, 6.5, F, GREY);
-  txt("Art. 238 bis C.G.I.", 8, headerY+26, 6.5, F, GREY);
-  txt("(Entreprises)",        8, headerY+14, 6.5, F, GREY);
+  txt("N° Cerfa : 16216*03",  MX+10, headerY+36, 6.5, F, GREY);
+  txt("Art. 238 bis C.G.I.", MX+10, headerY+26, 6.5, F, GREY);
+  txt("(Entreprises)",        MX+10, headerY+14, 6.5, F, GREY);
 
   // Colonne droite : N° d'ordre
   txt("N° d'ordre du reçu", ordreX+6, headerY+64, 7, F, GREY);
@@ -207,13 +204,12 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const idH = 54;
   const idY = y - idH;
 
-  // Fond + bordure pleine largeur
-  page.drawRectangle({ x: 0, y: idY, width: W, height: idH, color: WHT, borderColor: BORDER, borderWidth: 0.6 });
-  // Séparateur vertical au centre
-  page.drawLine({ start: { x: W/2, y: idY }, end: { x: W/2, y: idY+idH }, thickness: 0.6, color: BORDER });
+  // 2e rectangle : fond blanc, aucune bordure, aucun séparateur
+  page.drawRectangle({ x: MX, y: idY, width: W-MX*2, height: idH, color: WHT, borderWidth: 0 });
 
-  // Logo + nom asso (gauche)
-  let logoEndX = MX;
+  // Logo + nom asso (gauche), aligné sur MX+10 comme le bloc cerfa
+  const startX = MX + 10;
+  let logoEndX = startX;
   const logoSrc = data.association.logoUrl?.split("?")[0];
   if (logoSrc) {
     try {
@@ -223,8 +219,8 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
           ? await doc.embedJpg(imgD.bytes) : await doc.embedPng(imgD.bytes);
         const sc = Math.min(54 / li.width, 38 / li.height);
         const lw = li.width * sc, lh = li.height * sc;
-        page.drawImage(li, { x: MX, y: idY + (idH - lh)/2, width: lw, height: lh });
-        logoEndX = MX + lw + 8;
+        page.drawImage(li, { x: startX, y: idY + (idH - lh)/2, width: lw, height: lh });
+        logoEndX = startX + lw + 8;
       }
     } catch { /* ignoré */ }
   }
@@ -251,13 +247,14 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const objetLines = assocObjet ? wrapText(assocObjet, F, 8.5, 365) : [];
   const nObjLines = Math.min(3, objetLines.length);
 
+  const benPad = 12; // padding haut = bas
   let benH = 14 + 14; // NOM + ADRESSE
   if (objetLines.length > 0) benH += 13 + nObjLines * 12;
-  benH += 14 + 8; // QUALITE + padding
+  benH += 14 + benPad * 2; // QUALITE + padding symétrique
 
   box(MX, y - benH, W - MX*2, benH);
 
-  let fy = y - 13;
+  let fy = y - benPad;
   field("NOM OU DENOMINATION :", assocNom, MX+8, fy);
   fy -= 14;
   field("ADRESSE ASSOCIATION :", assocAdr, MX+8, fy);
@@ -269,7 +266,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   }
   field("QUALITÉ DE L'ORGANISME :", qualite, MX+8, fy);
 
-  y -= benH + 6;
+  y -= benH + 16;
 
   // ────────────────────────────────────────────────────────────────────────────
   //  4. MONTANT
@@ -281,7 +278,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const montantStr = data.montant.toFixed(2).replace(".", ",");
   const lettresStr = montantEnLettres(data.montant);
   const montH = 40;
-  page.drawRectangle({ x: MX, y: y-montH, width: W-MX*2, height: montH, color: WHT, borderColor: NAVY, borderWidth: 1 });
+  page.drawRectangle({ x: 0, y: y-montH, width: W, height: montH, color: WHT, borderColor: NAVY, borderWidth: 1 });
 
   const starsStr = "***";
   const sw  = F.widthOfTextAtSize(starsStr, 9);
@@ -289,7 +286,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const ew  = FB.widthOfTextAtSize(" Euros", 12);
   const lw3 = FB.widthOfTextAtSize(lettresStr, 10);
   const tot = sw + 4 + mw + ew + 4 + sw + 14 + lw3;
-  let cx = MX + (W - MX*2 - tot) / 2;
+  let cx = (W - tot) / 2;
   const my = y - montH/2 - 4;
   txt(starsStr,   cx, my, 9,  F,  GREY); cx += sw + 4;
   txt(montantStr, cx, my, 12, FB, BLK);  cx += mw;
@@ -297,7 +294,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   txt(starsStr,   cx, my, 9,  F,  GREY); cx += sw + 14;
   txt(lettresStr, cx, my, 10, FB, BLK);
 
-  y -= montH + 6;
+  y -= montH + 8;
 
   // ────────────────────────────────────────────────────────────────────────────
   //  5. DONATEUR (entreprise)
@@ -317,15 +314,16 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   box(MX, y - donBoxH, W - MX*2, donBoxH);
   donRows.forEach(({ label, value }, i) => field(label, value, MX+8, y - 13 - i*16));
 
-  y -= donBoxH + 6;
+  y -= donBoxH + 16;
 
   // ────────────────────────────────────────────────────────────────────────────
   //  6. CERTIFICATION + CASES À COCHER
   // ────────────────────────────────────────────────────────────────────────────
-  // Fond clair sur toute la section
+  // Fond clair avec padding égal haut/bas (certPad)
+  const certPad = 10;
   const certSectionH = 16 + 26 + 24 + 24 + 24;
-  page.drawRectangle({ x: 0, y: y - certSectionH, width: W, height: certSectionH + 4, color: CERTBG, borderWidth: 0 });
-  page.drawLine({ start: { x: 0, y: y + 4 }, end: { x: W, y: y + 4 }, thickness: 0.4, color: BORDER });
+  page.drawRectangle({ x: MX, y: y - certSectionH - certPad, width: W-MX*2, height: certSectionH + certPad * 2, color: CERTBG, borderWidth: 0 });
+  page.drawLine({ start: { x: MX, y: y + certPad }, end: { x: W-MX, y: y + certPad }, thickness: 0.4, color: BORDER });
 
   const c1 = "Le bénéficiaire certifie sur l'honneur que les dons et versements qu'il reçoit";
   const c2 = "ouvrent droit à la réduction d'impôt prévue à l'article";
@@ -334,41 +332,43 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   txt(c2, (W - FB.widthOfTextAtSize(c2, 8.5))/2, y, 8.5, FB, BLK);
   y -= 22;
 
-  // Article CGI
-  const artW = (W - MX*2) / 3;
+  // Grille fixe 3 colonnes — la ligne de 4 utilise la même grille, la 4e dépasse
+  const colW = (W - MX*2) / 3;
+  const col  = (i: number) => MX + i * colW + 8;
+
+  // Article CGI — 3 cases
   ([
     { label: "200 du CGI",     val: "200"    },
     { label: "238 bis du CGI", val: "238bis" },
     { label: "978 du CGI",     val: "978"    },
-  ] as const).forEach((opt, i) => cb(MX + i * artW + 8, y, articleFiscal === opt.val, opt.label));
+  ] as const).forEach((opt, i) => cb(col(i), y, articleFiscal === opt.val, opt.label));
   y -= 24;
 
-  // Forme du don
+  // Forme du don — 4 cases réparties sur 4 colonnes égales
   underline("Forme du don", MX, y);
   y -= 16;
-  const formeW = (W - MX*2) / 4;
+  const fCol = (W - MX*2) / 4;
   ([
     { label: "Acte authentique",          val: "acte_authentique"   },
     { label: "Acte sous seing privé",     val: "ssp"                },
     { label: "Déclaration de don manuel", val: "declaration_manuel" },
     { label: "Autres",                    val: "autre"              },
-  ] as const).forEach((opt, i) => cb(MX + i * formeW + 4, y, formeDon === opt.val, opt.label, 7.5));
+  ] as const).forEach((opt, i) => cb(MX + i * fCol + 6, y, formeDon === opt.val, opt.label, 7.5));
   y -= 24;
 
-  // Nature du don
+  // Nature du don — 3 cases
   underline("Nature du don", MX, y);
   y -= 16;
-  const natW = (W - MX*2) / 3;
   ([
     { label: "Numéraire",                 val: "numeraire"     },
     { label: "Titres de sociétés cotées", val: "nature"        },
     { label: "Autres",                    val: "abandon_frais" },
-  ] as const).forEach((opt, i) => cb(MX + i * natW + 8, y, natureDon === opt.val, opt.label));
+  ] as const).forEach((opt, i) => cb(col(i), y, natureDon === opt.val, opt.label));
   y -= 18;
 
-  // Séparateur
-  page.drawLine({ start: { x: 0, y }, end: { x: W, y }, thickness: 0.6, color: BORDER });
-  y -= 18;
+  // Séparateur en bas du certbg (padding bas)
+  page.drawLine({ start: { x: MX, y: y - certPad }, end: { x: W-MX, y: y - certPad }, thickness: 0.4, color: BORDER });
+  y -= certPad + 16;
 
   // ────────────────────────────────────────────────────────────────────────────
   //  7. MODE DE VERSEMENT + SIGNATURE
@@ -404,7 +404,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   // ────────────────────────────────────────────────────────────────────────────
   //  8. PIED DE PAGE
   // ────────────────────────────────────────────────────────────────────────────
-  page.drawLine({ start: { x: 0, y: 48 }, end: { x: W, y: 48 }, thickness: 0.5, color: BORDER });
+  page.drawLine({ start: { x: MX, y: 48 }, end: { x: W-MX, y: 48 }, thickness: 0.5, color: BORDER });
   const foot = `Document établi conformément à l'article 238 bis du CGI — ${assocNom}`;
   txt(foot, (W - F.widthOfTextAtSize(foot, 7))/2, 34, 7, F, GREY);
 
