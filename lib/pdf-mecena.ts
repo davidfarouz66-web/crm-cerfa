@@ -344,16 +344,15 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   ] as const).forEach((opt, i) => cb(col(i), y, articleFiscal === opt.val, opt.label));
   y -= 24;
 
-  // Forme du don — 4 cases réparties sur 4 colonnes égales
+  // Forme du don — 3 cases alignées + "Autres" en bout de ligne
   underline("Forme du don", MX, y);
   y -= 16;
-  const fCol = (W - MX*2) / 4;
   ([
     { label: "Acte authentique",          val: "acte_authentique"   },
     { label: "Acte sous seing privé",     val: "ssp"                },
     { label: "Déclaration de don manuel", val: "declaration_manuel" },
-    { label: "Autres",                    val: "autre"              },
-  ] as const).forEach((opt, i) => cb(MX + i * fCol + 6, y, formeDon === opt.val, opt.label, 7.5));
+  ] as const).forEach((opt, i) => cb(col(i), y, formeDon === opt.val, opt.label, 7.5));
+  cb(W - MX - 58, y, formeDon === "autre", "Autres", 7.5);
   y -= 24;
 
   // Nature du don — 3 cases
@@ -373,13 +372,19 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   // ────────────────────────────────────────────────────────────────────────────
   //  7. MODE DE VERSEMENT + SIGNATURE
   // ────────────────────────────────────────────────────────────────────────────
-  txt("Mode de versement :", MX, y, 7.5, FB, NAVY);
-  txt(MODES[data.modePaiement] || data.modePaiement, MX + 132, y, 9, FB, BLK);
+  // Mode de versement (gauche)
+  txt("Mode de versement :", MX, y, 8, FB, NAVY);
+  txt(MODES[data.modePaiement] || data.modePaiement, MX + 136, y, 9, FB, BLK);
 
-  const sigX  = W / 2 + 20;
+  // Date et signature (droite — plus grand, bien centré)
+  const sigX  = W / 2 + 10;
   const sigW2 = W - MX - sigX;
-  txt("Date et signature", sigX, y, 7.5, FB, NAVY);
-  txt(dateFr(data.dateEmission), sigX, y - 16, 8.5, F, BLK);
+  const sigLabel = "Date et signature";
+  const sigLabelW = FB.widthOfTextAtSize(sigLabel, 10);
+  txt(sigLabel, sigX + (sigW2 - sigLabelW) / 2, y, 10, FB, NAVY);
+  const dateStr = dateFr(data.dateEmission);
+  const dateW = F.widthOfTextAtSize(dateStr, 9);
+  txt(dateStr, sigX + (sigW2 - dateW) / 2, y - 16, 9, F, BLK);
 
   const sigSrc = data.association.signatureUrl?.split("?")[0];
   if (sigSrc) {
@@ -388,9 +393,9 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
       if (imgD) {
         const si = imgD.ext === "jpg" || imgD.ext === "jpeg"
           ? await doc.embedJpg(imgD.bytes) : await doc.embedPng(imgD.bytes);
-        const sc = Math.min(sigW2 / si.width, 55 / si.height);
+        const sc = Math.min(sigW2 / si.width, 70 / si.height);
         const sw2 = si.width * sc, sh = si.height * sc;
-        page.drawImage(si, { x: sigX + (sigW2 - sw2)/2, y: y - 22 - sh, width: sw2, height: sh });
+        page.drawImage(si, { x: sigX + (sigW2 - sw2) / 2, y: y - 24 - sh, width: sw2, height: sh });
       }
     } catch { /* ignoré */ }
   }
@@ -398,7 +403,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const representant = clean(data.association.representant);
   if (representant) {
     const rw = F.widthOfTextAtSize(representant, 7.5);
-    txt(representant, sigX + (sigW2 - rw)/2, y - 82, 7.5, F, GREY);
+    txt(representant, sigX + (sigW2 - rw) / 2, y - 98, 7.5, F, GREY);
   }
 
   // ────────────────────────────────────────────────────────────────────────────
