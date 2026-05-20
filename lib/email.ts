@@ -1,6 +1,5 @@
 import nodemailer from "nodemailer";
-import { readFileSync, existsSync } from "fs";
-import path from "path";
+import { downloadPDF } from "./storage";
 
 export function createTransporter() {
   return nodemailer.createTransport({
@@ -41,10 +40,9 @@ export async function sendCerfaEmail({
   });
   const montantFr = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(montant);
 
-  // Lecture du PDF
-  const fullPdfPath = path.join(process.cwd(), "public", pdfPath);
-  if (!existsSync(fullPdfPath)) throw new Error("Fichier PDF introuvable");
-  const pdfBuffer = readFileSync(fullPdfPath);
+  // Téléchargement depuis Supabase Storage (fonctionne en local ET sur Vercel)
+  const storageFilename = pdfPath.replace(/^\/api\/pdf\//, "");
+  const pdfBytes = await downloadPDF(storageFilename);
   const fileName = `CERFA-${numeroCerfa.replace("/", "-")}.pdf`;
 
   await transporter.sendMail({
@@ -81,8 +79,8 @@ export async function sendCerfaEmail({
       </div>
     `,
     attachments: [{
-      filename: fileName,
-      content:  pdfBuffer,
+      filename:    fileName,
+      content:     Buffer.from(pdfBytes),
       contentType: "application/pdf",
     }],
   });
