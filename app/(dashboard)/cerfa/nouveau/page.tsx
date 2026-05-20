@@ -29,7 +29,7 @@ function NouveauCerfaForm() {
   const [derogationMotif, setDerogationMotif] = useState("");
 
   useEffect(() => {
-    fetch("/api/donateurs").then((r) => r.json()).then(setDonateurs);
+    fetch("/api/donateurs?limit=0").then((r) => r.json()).then(setDonateurs);
     fetch("/api/association").then((r) => r.json()).then((d) => {
       setEligibiliteOk(!!d.organismeEligibleMecenat);
     });

@@ -4,10 +4,12 @@ import { prisma } from "@/lib/db";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const q     = searchParams.get("q") || "";
-  const page  = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-  const limit = 20;
-  const skip  = (page - 1) * limit;
+  const q       = searchParams.get("q") || "";
+  const page    = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const limitQs = parseInt(searchParams.get("limit") || "20", 10);
+  const noLimit = limitQs === 0;
+  const limit   = noLimit ? 20 : limitQs;
+  const skip    = (page - 1) * limit;
 
   const where = q
     ? {
@@ -19,6 +21,15 @@ export async function GET(req: Request) {
         ],
       }
     : {};
+
+  if (noLimit) {
+    const donateurs = await prisma.donateur.findMany({
+      where,
+      include: { _count: { select: { cerfas: true } } },
+      orderBy: { nom: "asc" },
+    });
+    return NextResponse.json(donateurs);
+  }
 
   const [donateurs, total] = await Promise.all([
     prisma.donateur.findMany({
