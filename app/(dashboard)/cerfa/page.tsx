@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, FilePlus, Download, ChevronRight, CheckCircle, Clock, Ban } from "lucide-react";
+import { Search, FilePlus, Download, ChevronRight, ChevronLeft, CheckCircle, Clock, Ban } from "lucide-react";
 import { formatMontant, formatDate } from "@/lib/utils";
 
 interface Cerfa {
@@ -28,16 +28,28 @@ export default function CerfaListPage() {
   const [cerfas, setCerfas] = useState<Cerfa[]>([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [q]);
 
   useEffect(() => {
     setLoading(true);
     const timeout = setTimeout(() => {
-      fetch(`/api/cerfa?q=${encodeURIComponent(q)}`)
+      fetch(`/api/cerfa?q=${encodeURIComponent(q)}&page=${page}`)
         .then((r) => r.json())
-        .then((d) => { setCerfas(d); setLoading(false); });
+        .then((d) => {
+          setCerfas(d.data);
+          setTotal(d.total);
+          setTotalPages(d.totalPages);
+          setLoading(false);
+        });
     }, 300);
     return () => clearTimeout(timeout);
-  }, [q]);
+  }, [q, page]);
 
   const getNom = (d: Cerfa["donateur"]) =>
     d.type === "entreprise" ? d.raisonSociale || d.nom : `${d.prenom || ""} ${d.nom}`.trim();
@@ -47,7 +59,7 @@ export default function CerfaListPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-slate-800">Liste des CERFA</h1>
-          <p className="text-slate-500 text-sm mt-0.5">{cerfas.length} reçu(s)</p>
+          <p className="text-slate-500 text-sm mt-0.5">{total} reçu(s)</p>
         </div>
         <Link href="/cerfa/nouveau"
           className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm">
@@ -68,57 +80,80 @@ export default function CerfaListPage() {
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-50">
-          {cerfas.map((c) => (
-            <div key={c.id} className={`flex items-center justify-between p-3 md:p-4 ${c.status === "annulé" ? "opacity-50" : ""}`}>
-              <Link href={`/cerfa/${c.id}`} className="flex-1 flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity">
-                <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center ${c.status === "annulé" ? "bg-red-50" : "bg-blue-50"}`}>
-                  {c.status === "annulé"
-                    ? <Ban size={14} className="text-red-400" />
-                    : <span className="text-blue-600 text-xs font-bold">PDF</span>
-                  }
+        <>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-50">
+            {cerfas.map((c) => (
+              <div key={c.id} className={`flex items-center justify-between p-3 md:p-4 ${c.status === "annulé" ? "opacity-50" : ""}`}>
+                <Link href={`/cerfa/${c.id}`} className="flex-1 flex items-center gap-3 min-w-0 hover:opacity-80 transition-opacity">
+                  <div className={`w-9 h-9 shrink-0 rounded-xl flex items-center justify-center ${c.status === "annulé" ? "bg-red-50" : "bg-blue-50"}`}>
+                    {c.status === "annulé"
+                      ? <Ban size={14} className="text-red-400" />
+                      : <span className="text-blue-600 text-xs font-bold">PDF</span>
+                    }
+                  </div>
+                  <div className="min-w-0">
+                    <p className={`font-medium text-sm truncate ${c.status === "annulé" ? "text-slate-400 line-through" : "text-slate-800"}`}>{c.numeroCerfa}</p>
+                    <p className="text-xs text-slate-500 truncate">{getNom(c.donateur)}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{formatMontant(c.montant)} · {modeLabel[c.modePaiement]}</p>
+                  </div>
+                </Link>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  {c.status === "annulé" ? (
+                    <span className="flex items-center gap-1 text-xs font-medium text-red-500 bg-red-50 px-2 py-1 rounded-full">
+                      <Ban size={11} /> Annulé
+                    </span>
+                  ) : c.sentAt ? (
+                    <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                      <CheckCircle size={11} /> Envoyé
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-full whitespace-nowrap">
+                      <Clock size={11} /> En attente
+                    </span>
+                  )}
+                  {c.pdfPath && (
+                    <a href={c.pdfPath} target="_blank" rel="noopener noreferrer"
+                      className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+                      <Download size={14} />
+                    </a>
+                  )}
+                  <Link href={`/cerfa/${c.id}`} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+                    <ChevronRight size={14} className="text-slate-400" />
+                  </Link>
                 </div>
-                <div className="min-w-0">
-                  <p className={`font-medium text-sm truncate ${c.status === "annulé" ? "text-slate-400 line-through" : "text-slate-800"}`}>{c.numeroCerfa}</p>
-                  <p className="text-xs text-slate-500 truncate">{getNom(c.donateur)}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{formatMontant(c.montant)} · {modeLabel[c.modePaiement]}</p>
-                </div>
-              </Link>
-              <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                {c.status === "annulé" ? (
-                  <span className="flex items-center gap-1 text-xs font-medium text-red-500 bg-red-50 px-2 py-1 rounded-full">
-                    <Ban size={11} /> Annulé
-                  </span>
-                ) : c.sentAt ? (
-                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
-                    <CheckCircle size={11} /> Envoyé
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-full whitespace-nowrap">
-                    <Clock size={11} /> En attente
-                  </span>
-                )}
-                {c.pdfPath && (
-                  <a href={c.pdfPath} target="_blank" rel="noopener noreferrer"
-                    className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
-                    <Download size={14} />
-                  </a>
-                )}
-                <Link href={`/cerfa/${c.id}`} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
-                  <ChevronRight size={14} className="text-slate-400" />
+              </div>
+            ))}
+            {cerfas.length === 0 && (
+              <div className="p-12 text-center text-slate-400">
+                <p className="mb-2">Aucun CERFA trouvé</p>
+                <Link href="/cerfa/nouveau" className="text-blue-600 text-sm hover:underline">
+                  Créer le premier CERFA →
                 </Link>
               </div>
-            </div>
-          ))}
-          {cerfas.length === 0 && (
-            <div className="p-12 text-center text-slate-400">
-              <p className="mb-2">Aucun CERFA trouvé</p>
-              <Link href="/cerfa/nouveau" className="text-blue-600 text-sm hover:underline">
-                Créer le premier CERFA →
-              </Link>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={16} /> Précédent
+              </button>
+              <span className="text-sm text-slate-500">Page {page} / {totalPages}</span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Suivant <ChevronRight size={16} />
+              </button>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

@@ -31,7 +31,7 @@ export default function RecapitulatifPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/cerfa?annee=${annee}`)
+    fetch(`/api/cerfa?annee=${annee}&limit=0`)
       .then((r) => r.json())
       .then((d) => { setCerfas(d); setLoading(false); });
   }, [annee]);

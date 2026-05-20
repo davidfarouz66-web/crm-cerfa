@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, UserPlus, Mail, Phone, ChevronRight } from "lucide-react";
+import { Search, UserPlus, Mail, Phone, ChevronRight, ChevronLeft } from "lucide-react";
 
 interface Donateur {
   id: string;
@@ -20,16 +20,28 @@ export default function DonateursPage() {
   const [donateurs, setDonateurs] = useState<Donateur[]>([]);
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [q]);
 
   useEffect(() => {
     setLoading(true);
     const timeout = setTimeout(() => {
-      fetch(`/api/donateurs?q=${encodeURIComponent(q)}`)
+      fetch(`/api/donateurs?q=${encodeURIComponent(q)}&page=${page}`)
         .then((r) => r.json())
-        .then((d) => { setDonateurs(d); setLoading(false); });
+        .then((d) => {
+          setDonateurs(d.data);
+          setTotal(d.total);
+          setTotalPages(d.totalPages);
+          setLoading(false);
+        });
     }, 300);
     return () => clearTimeout(timeout);
-  }, [q]);
+  }, [q, page]);
 
   const getNom = (d: Donateur) =>
     d.type === "entreprise"
@@ -41,7 +53,7 @@ export default function DonateursPage() {
       <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-xl md:text-2xl font-bold text-slate-800">Donateurs</h1>
-          <p className="text-slate-500 text-sm mt-0.5">{donateurs.length} donateur(s)</p>
+          <p className="text-slate-500 text-sm mt-0.5">{total} donateur(s)</p>
         </div>
         <Link
           href="/donateurs/nouveau"
@@ -70,53 +82,76 @@ export default function DonateursPage() {
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-50">
-          {donateurs.map((d) => (
-            <Link
-              key={d.id}
-              href={`/donateurs/${d.id}`}
-              className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-white font-bold text-sm ${
-                  d.type === "entreprise" ? "bg-violet-500" : "bg-blue-500"
-                }`}>
-                  {getNom(d).charAt(0).toUpperCase()}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-slate-800 text-sm truncate">{getNom(d)}</p>
-                  <div className="flex flex-col mt-0.5 gap-0.5">
-                    {d.email && (
-                      <span className="text-xs text-slate-400 flex items-center gap-1 truncate">
-                        <Mail size={11} className="shrink-0" />
-                        <span className="truncate">{d.email}</span>
-                      </span>
-                    )}
-                    {d.telephone && (
-                      <span className="text-xs text-slate-400 flex items-center gap-1">
-                        <Phone size={11} className="shrink-0" />{d.telephone}
-                      </span>
-                    )}
+        <>
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-50">
+            {donateurs.map((d) => (
+              <Link
+                key={d.id}
+                href={`/donateurs/${d.id}`}
+                className="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                    d.type === "entreprise" ? "bg-violet-500" : "bg-blue-500"
+                  }`}>
+                    {getNom(d).charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium text-slate-800 text-sm truncate">{getNom(d)}</p>
+                    <div className="flex flex-col mt-0.5 gap-0.5">
+                      {d.email && (
+                        <span className="text-xs text-slate-400 flex items-center gap-1 truncate">
+                          <Mail size={11} className="shrink-0" />
+                          <span className="truncate">{d.email}</span>
+                        </span>
+                      )}
+                      {d.telephone && (
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                          <Phone size={11} className="shrink-0" />{d.telephone}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0 ml-2">
-                <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium whitespace-nowrap">
-                  {d._count.cerfas} CERFA
-                </span>
-                <ChevronRight size={16} className="text-slate-400" />
-              </div>
-            </Link>
-          ))}
-          {donateurs.length === 0 && (
-            <div className="p-12 text-center text-slate-400">
-              <p className="mb-2">Aucun donateur trouvé</p>
-              <Link href="/donateurs/nouveau" className="text-blue-600 text-sm hover:underline">
-                Ajouter le premier donateur →
+                <div className="flex items-center gap-2 shrink-0 ml-2">
+                  <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-medium whitespace-nowrap">
+                    {d._count.cerfas} CERFA
+                  </span>
+                  <ChevronRight size={16} className="text-slate-400" />
+                </div>
               </Link>
+            ))}
+            {donateurs.length === 0 && (
+              <div className="p-12 text-center text-slate-400">
+                <p className="mb-2">Aucun donateur trouvé</p>
+                <Link href="/donateurs/nouveau" className="text-blue-600 text-sm hover:underline">
+                  Ajouter le premier donateur →
+                </Link>
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <ChevronLeft size={16} /> Précédent
+              </button>
+              <span className="text-sm text-slate-500">Page {page} / {totalPages}</span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Suivant <ChevronRight size={16} />
+              </button>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

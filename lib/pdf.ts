@@ -334,7 +334,7 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   // ────────────────────────────────────────────────────────────────────────────
   // Fond clair avec padding égal haut/bas (certPad)
   const certPad = 10;
-  const certSectionH = 16 + 26 + 24 + 24 + 24;
+  const certSectionH = 14 + 22 + 16 + 24 + 16 + 24 + 16 + 18; // c1+c2+titre article+cases+titre forme+cases+titre nature+cases
   page.drawRectangle({ x: MX, y: y - certSectionH - certPad, width: W-MX*2, height: certSectionH + certPad * 2, color: CERTBG, borderWidth: 0 });
   page.drawLine({ start: { x: MX, y: y + certPad }, end: { x: W-MX, y: y + certPad }, thickness: 0.4, color: BORDER });
 
@@ -349,7 +349,9 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   const colW = (W - MX*2) / 3;
   const col  = (i: number) => MX + i * colW + 8;
 
-  // Article CGI — 3 cases
+  // Article CGI — titre + 3 cases
+  underline("Article CGI", MX, y);
+  y -= 16;
   ([
     { label: "200 du CGI",     val: "200"    },
     { label: "238 bis du CGI", val: "238bis" },

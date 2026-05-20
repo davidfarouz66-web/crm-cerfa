@@ -55,6 +55,7 @@ export default function ParametresPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [uploadingSig, setUploadingSig] = useState(false);
   const [eligible, setEligible] = useState(false);
@@ -92,21 +93,34 @@ export default function ParametresPage() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true);
+    setSaveError("");
     const form = new FormData(e.currentTarget);
     const data = Object.fromEntries(form.entries());
-    await fetch("/api/association", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...data,
-        logoUrl: assoc.logoUrl,
-        signatureUrl: assoc.signatureUrl,
-        organismeEligibleMecenat: eligible,
-      }),
-    });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    try {
+      const res = await fetch("/api/association", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...data,
+          logoUrl: assoc.logoUrl,
+          signatureUrl: assoc.signatureUrl,
+          organismeEligibleMecenat: eligible,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setSaveError(json.error || `Erreur ${res.status}`);
+      } else {
+        setAssoc((prev) => ({ ...prev, ...json }));
+        setEligible(!!json.organismeEligibleMecenat);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } catch (err) {
+      setSaveError(String(err));
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -353,6 +367,11 @@ export default function ParametresPage() {
           </div>
         </div>
 
+        {saveError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm break-all">
+            Erreur : {saveError}
+          </div>
+        )}
         {saved && (
           <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm">
             ✓ Paramètres enregistrés

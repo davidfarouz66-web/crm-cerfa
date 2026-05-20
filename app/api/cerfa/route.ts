@@ -10,30 +10,44 @@ import { uploadPDF } from "@/lib/storage";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q") || "";
+  const q     = searchParams.get("q") || "";
   const annee = searchParams.get("annee");
+  const page  = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const limit = parseInt(searchParams.get("limit") || "20", 10);
+  const skip  = (page - 1) * limit;
+  const noLimit = limit === 0;
 
-  const cerfas = await prisma.cerfa.findMany({
-    where: {
-      ...(q && {
-        OR: [
-          { numeroCerfa: { contains: q } },
-          { donateur: { nom: { contains: q } } },
-          { donateur: { prenom: { contains: q } } },
-        ],
-      }),
-      ...(annee && {
-        dateDon: {
-          gte: new Date(`${annee}-01-01`),
-          lte: new Date(`${annee}-12-31`),
-        },
-      }),
-    },
-    include: { donateur: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const where = {
+    ...(q && {
+      OR: [
+        { numeroCerfa: { contains: q } },
+        { donateur: { nom: { contains: q } } },
+        { donateur: { prenom: { contains: q } } },
+      ],
+    }),
+    ...(annee && {
+      dateDon: {
+        gte: new Date(`${annee}-01-01`),
+        lte: new Date(`${annee}-12-31`),
+      },
+    }),
+  };
 
-  return NextResponse.json(cerfas);
+  if (noLimit) {
+    const cerfas = await prisma.cerfa.findMany({
+      where, include: { donateur: true }, orderBy: { createdAt: "desc" },
+    });
+    return NextResponse.json(cerfas);
+  }
+
+  const [cerfas, total] = await Promise.all([
+    prisma.cerfa.findMany({
+      where, include: { donateur: true }, orderBy: { createdAt: "desc" }, skip, take: limit,
+    }),
+    prisma.cerfa.count({ where }),
+  ]);
+
+  return NextResponse.json({ data: cerfas, total, page, totalPages: Math.ceil(total / limit) });
 }
 
 export async function POST(req: Request) {
