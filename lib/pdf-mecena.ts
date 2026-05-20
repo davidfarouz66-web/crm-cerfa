@@ -278,7 +278,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const montantStr = data.montant.toFixed(2).replace(".", ",");
   const lettresStr = montantEnLettres(data.montant);
   const montH = 40;
-  page.drawRectangle({ x: 0, y: y-montH, width: W, height: montH, color: WHT, borderColor: NAVY, borderWidth: 1 });
+  page.drawRectangle({ x: MX, y: y-montH, width: W-MX*2, height: montH, color: WHT, borderColor: NAVY, borderWidth: 1 });
 
   const starsStr = "***";
   const sw  = F.widthOfTextAtSize(starsStr, 9);
@@ -286,7 +286,7 @@ export async function generateMecenaPDF(data: MecenaData): Promise<Uint8Array> {
   const ew  = FB.widthOfTextAtSize(" Euros", 12);
   const lw3 = FB.widthOfTextAtSize(lettresStr, 10);
   const tot = sw + 4 + mw + ew + 4 + sw + 14 + lw3;
-  let cx = (W - tot) / 2;
+  let cx = MX + (W - MX*2 - tot) / 2;
   const my = y - montH/2 - 4;
   txt(starsStr,   cx, my, 9,  F,  GREY); cx += sw + 4;
   txt(montantStr, cx, my, 12, FB, BLK);  cx += mw;
