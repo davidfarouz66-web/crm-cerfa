@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateNumeroCerfa } from "@/lib/utils";
+import { requireTenant } from "@/lib/tenant";
 
 function parseCSV(text: string): Record<string, string>[] {
   const lines = text.replace(/\r/g, "").split("\n").filter((l) => l.trim());
@@ -16,6 +17,9 @@ function parseCSV(text: string): Record<string, string>[] {
 const MODES_VALIDES = ["virement", "cheque", "especes", "cb"];
 
 export async function POST(req: Request) {
+  const t = await requireTenant();
+  if (t instanceof NextResponse) return t;
+
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "Fichier manquant" }, { status: 400 });
@@ -31,7 +35,6 @@ export async function POST(req: Request) {
     const row = rows[i];
     const rowNum = i + 2;
 
-    // Validation des champs obligatoires
     if (!row.nom) { errors.push({ row: rowNum, message: "Champ 'nom' manquant" }); continue; }
     if (!row.montant || isNaN(parseFloat(row.montant))) { errors.push({ row: rowNum, message: "Champ 'montant' invalide" }); continue; }
     if (!row.date_don || isNaN(Date.parse(row.date_don))) { errors.push({ row: rowNum, message: "Champ 'date_don' invalide (format attendu : AAAA-MM-JJ)" }); continue; }
@@ -39,57 +42,56 @@ export async function POST(req: Request) {
       errors.push({ row: rowNum, message: `Mode de paiement invalide (valeurs : ${MODES_VALIDES.join(", ")})` }); continue;
     }
 
-    // Si un numéro CERFA est fourni, vérifier qu'il n'existe pas déjà
     if (row.numero_cerfa) {
       const existing = await prisma.cerfa.findUnique({ where: { numeroCerfa: row.numero_cerfa } });
       if (existing) { skipped++; continue; }
     }
 
-    // Trouver ou créer le donateur
     const type = row.type === "entreprise" ? "entreprise" : "particulier";
     let donateur = null;
 
     if (row.email) {
-      donateur = await prisma.donateur.findFirst({ where: { email: row.email } });
+      donateur = await prisma.donateur.findFirst({ where: { email: row.email, tenantId: t.tenantId } });
     }
     if (!donateur) {
       donateur = await prisma.donateur.findFirst({
-        where: { nom: row.nom, prenom: row.prenom || null },
+        where: { nom: row.nom, prenom: row.prenom || null, tenantId: t.tenantId },
       });
     }
     if (!donateur) {
       donateur = await prisma.donateur.create({
         data: {
+          tenantId: t.tenantId,
           type,
-          nom: row.nom,
-          prenom: row.prenom || null,
+          nom:           row.nom,
+          prenom:        row.prenom || null,
           raisonSociale: type === "entreprise" ? row.nom : null,
-          email: row.email || null,
-          adresse: row.adresse || null,
-          codePostal: row.code_postal || null,
-          ville: row.ville || null,
+          email:         row.email || null,
+          adresse:       row.adresse || null,
+          codePostal:    row.code_postal || null,
+          ville:         row.ville || null,
         },
       });
     }
 
-    // Générer le numéro CERFA si absent
     let numeroCerfa = row.numero_cerfa || "";
     if (!numeroCerfa) {
       const annee = new Date(row.date_don).getFullYear();
       const count = await prisma.cerfa.count({
-        where: { dateDon: { gte: new Date(`${annee}-01-01`), lte: new Date(`${annee}-12-31`) } },
+        where: { tenantId: t.tenantId, dateDon: { gte: new Date(`${annee}-01-01`), lte: new Date(`${annee}-12-31`) } },
       });
       numeroCerfa = generateNumeroCerfa(annee, count + 1);
     }
 
     await prisma.cerfa.create({
       data: {
+        tenantId:      t.tenantId,
         numeroCerfa,
-        donateurId: donateur.id,
-        dateDon: new Date(row.date_don),
-        montant: parseFloat(row.montant),
-        modePaiement: row.mode_paiement,
-        dateEmission: new Date(),
+        donateurId:    donateur.id,
+        dateDon:       new Date(row.date_don),
+        montant:       parseFloat(row.montant),
+        modePaiement:  row.mode_paiement,
+        dateEmission:  new Date(),
       },
     });
 

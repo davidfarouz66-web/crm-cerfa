@@ -7,17 +7,22 @@ import { generateNumeroCerfa } from "@/lib/utils";
 import { generateCerfaPDF } from "@/lib/pdf";
 import { generateMecenaPDF } from "@/lib/pdf-mecena";
 import { uploadPDF } from "@/lib/storage";
+import { requireTenant } from "@/lib/tenant";
 
 export async function GET(req: Request) {
+  const t = await requireTenant();
+  if (t instanceof NextResponse) return t;
+
   const { searchParams } = new URL(req.url);
-  const q     = searchParams.get("q") || "";
-  const annee = searchParams.get("annee");
-  const page  = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
-  const limit = parseInt(searchParams.get("limit") || "20", 10);
-  const skip  = (page - 1) * limit;
+  const q       = searchParams.get("q") || "";
+  const annee   = searchParams.get("annee");
+  const page    = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+  const limit   = parseInt(searchParams.get("limit") || "20", 10);
+  const skip    = (page - 1) * limit;
   const noLimit = limit === 0;
 
   const where = {
+    tenantId: t.tenantId,
     ...(q && {
       OR: [
         { numeroCerfa: { contains: q } },
@@ -51,17 +56,19 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  const t = await requireTenant();
+  if (t instanceof NextResponse) return t;
+
   const body = await req.json();
   const session = await getServerSession(authOptions);
 
   const annee = new Date(body.dateDon).getFullYear();
 
-  const association = await prisma.association.findFirst();
+  const association = await prisma.association.findFirst({ where: { tenantId: t.tenantId } });
   if (!association) {
     return NextResponse.json({ error: "Association non configurée" }, { status: 400 });
   }
 
-  // Vérification éligibilité
   if (!association.organismeEligibleMecenat) {
     return NextResponse.json({
       error: "L'association n'est pas marquée comme éligible au mécénat. Vérifiez les paramètres association.",
@@ -69,14 +76,12 @@ export async function POST(req: Request) {
     }, { status: 400 });
   }
 
-  // Vérification chronologique de la date d'émission
   const dateEmission = body.dateEmission ? new Date(body.dateEmission) : new Date();
   const dernierCerfa = await prisma.cerfa.findFirst({
-    where: { status: "actif" },
+    where: { status: "actif", tenantId: t.tenantId },
     orderBy: { dateEmission: "desc" },
   });
   if (dernierCerfa && dateEmission < dernierCerfa.dateEmission) {
-    // Dérogation autorisée si motif fourni
     if (!body.derogationMotif?.trim()) {
       return NextResponse.json({
         code: "NOT_CHRONOLOGICAL",
@@ -85,7 +90,6 @@ export async function POST(req: Request) {
         dernierDate: dernierCerfa.dateEmission.toLocaleDateString("fr-FR"),
       }, { status: 400 });
     }
-    // Journaliser la dérogation
     await prisma.auditLog.create({
       data: {
         userId: (session?.user as { id?: string })?.id ?? null,
@@ -101,9 +105,8 @@ export async function POST(req: Request) {
     }).catch(() => {});
   }
 
-  // Calcul du prochain numéro de séquence pour l'année
   const lastForYear = await prisma.cerfa.findFirst({
-    where: { numeroCerfa: { startsWith: `A${annee}/` } },
+    where: { numeroCerfa: { startsWith: `A${annee}/` }, tenantId: t.tenantId },
     orderBy: { numeroCerfa: "desc" },
   });
   let nextSeq = 1;
@@ -111,33 +114,34 @@ export async function POST(req: Request) {
     const parts = lastForYear.numeroCerfa.split("/");
     nextSeq = parseInt(parts[1], 10) + 1;
   }
-  // Respecte le numéro de départ configuré par l'association
   if (association.cerfaSequence > 0 && nextSeq < association.cerfaSequence) {
     nextSeq = association.cerfaSequence;
   }
   const numeroCerfa = generateNumeroCerfa(annee, nextSeq);
 
-  const donateur = await prisma.donateur.findUnique({ where: { id: body.donateurId } });
+  const donateur = await prisma.donateur.findFirst({
+    where: { id: body.donateurId, tenantId: t.tenantId },
+  });
   if (!donateur) {
     return NextResponse.json({ error: "Donateur introuvable" }, { status: 404 });
   }
 
   const cerfa = await prisma.cerfa.create({
     data: {
+      tenantId:      t.tenantId,
       numeroCerfa,
-      donateurId: body.donateurId,
-      dateDon: new Date(body.dateDon),
-      montant: parseFloat(body.montant),
-      modePaiement: body.modePaiement,
-      objetDon: body.objetDon || null,
-      natureDon: body.natureDon || "numeraire",
-      formeDon: body.formeDon || "declaration_manuel",
+      donateurId:    body.donateurId,
+      dateDon:       new Date(body.dateDon),
+      montant:       parseFloat(body.montant),
+      modePaiement:  body.modePaiement,
+      objetDon:      body.objetDon || null,
+      natureDon:     body.natureDon || "numeraire",
+      formeDon:      body.formeDon || "declaration_manuel",
       articleFiscal: body.articleFiscal || association.articlesFiscauxAutorises || "200",
       dateEmission,
     },
   });
 
-  // Audit log
   await prisma.auditLog.create({
     data: {
       userId: (session?.user as { id?: string })?.id ?? null,
@@ -151,10 +155,13 @@ export async function POST(req: Request) {
   const pdfData = {
     numeroCerfa,
     donateur,
-    dateDon: new Date(body.dateDon),
-    montant: parseFloat(body.montant),
+    dateDon:      new Date(body.dateDon),
+    montant:      parseFloat(body.montant),
     modePaiement: body.modePaiement,
-    objetDon: body.objetDon || null,
+    objetDon:     body.objetDon || null,
+    natureDon:    body.natureDon || "numeraire",
+    formeDon:     body.formeDon || "declaration_manuel",
+    articleFiscal: body.articleFiscal || association.articlesFiscauxAutorises || "200",
     dateEmission,
     association,
   };
@@ -168,7 +175,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Erreur génération PDF: ${String(pdfErr)}` }, { status: 500 });
   }
 
-  const fileName = `${numeroCerfa.replace("/", "-")}.pdf`;
+  const fileName = `${t.tenantId}-${numeroCerfa.replace("/", "-")}.pdf`;
   await uploadPDF(fileName, pdfBytes);
 
   const updatedCerfa = await prisma.cerfa.update({

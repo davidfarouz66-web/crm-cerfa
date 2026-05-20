@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Heart, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
@@ -79,6 +80,11 @@ export default function LoginPage() {
               {loading ? "Connexion..." : "Se connecter"}
             </button>
           </form>
+
+          <p className="text-center text-sm text-slate-500 mt-5">
+            Pas encore de compte ?{" "}
+            <Link href="/register" className="text-blue-600 font-medium hover:underline">Créer un espace</Link>
+          </p>
         </div>
       </div>
     </div>

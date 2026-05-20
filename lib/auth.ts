@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
           });
 
           const result = await pool.query(
-            'SELECT id, email, name, role, password FROM "User" WHERE email = $1',
+            'SELECT id, email, name, role, password, "tenantId" FROM "User" WHERE email = $1',
             [credentials.email]
           );
           await pool.end();
@@ -39,7 +39,7 @@ export const authOptions: NextAuthOptions = {
           console.log("[auth] password valid:", valid);
           if (!valid) return null;
 
-          return { id: user.id, email: user.email, name: user.name, role: user.role };
+          return { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId };
         } catch (err) {
           console.error("[auth] error:", String(err));
           return null;
@@ -50,15 +50,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as { role?: string }).role;
-        token.id = user.id;
+        token.role     = (user as { role?: string }).role;
+        token.id       = user.id;
+        token.tenantId = (user as { tenantId?: string }).tenantId ?? "default";
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        (session.user as { role?: string; id?: string }).role = token.role as string;
-        (session.user as { role?: string; id?: string }).id = token.id as string;
+        (session.user as { role?: string; id?: string; tenantId?: string }).role     = token.role as string;
+        (session.user as { role?: string; id?: string; tenantId?: string }).id       = token.id as string;
+        (session.user as { role?: string; id?: string; tenantId?: string }).tenantId = token.tenantId as string;
       }
       return session;
     },

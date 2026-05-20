@@ -1,13 +1,19 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireTenant } from "@/lib/tenant";
 
 export async function GET() {
-  const association = await prisma.association.findFirst();
+  const t = await requireTenant();
+  if (t instanceof NextResponse) return t;
+  const association = await prisma.association.findFirst({ where: { tenantId: t.tenantId } });
   return NextResponse.json(association || {});
 }
 
 export async function PUT(req: Request) {
+  const t = await requireTenant();
+  if (t instanceof NextResponse) return t;
+
   try {
     const body = await req.json();
     const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
@@ -27,7 +33,6 @@ export async function PUT(req: Request) {
       logoUrl:          str(body.logoUrl),
       signatureUrl:     str(body.signatureUrl),
       cerfaSequence:    parseInt(String(body.cerfaSequence ?? 0), 10) || 0,
-      // Éligibilité fiscale
       organismeEligibleMecenat:    body.organismeEligibleMecenat === true || body.organismeEligibleMecenat === "true",
       articlesFiscauxAutorises:    str(body.articlesFiscauxAutorises) || "200",
       typeOrganisme:               str(body.typeOrganisme),
@@ -35,17 +40,16 @@ export async function PUT(req: Request) {
       commentaireEligibilite:      str(body.commentaireEligibilite),
       responsableLegalNom:         str(body.responsableLegalNom),
       responsableLegalFonction:    str(body.responsableLegalFonction),
-      // RGPD
       dureConservationAnnees:      parseInt(String(body.dureConservationAnnees ?? 10), 10) || 10,
       contactRgpd:                 str(body.contactRgpd),
     };
 
-    const existing = await prisma.association.findFirst();
+    const existing = await prisma.association.findFirst({ where: { tenantId: t.tenantId } });
     if (existing) {
       const updated = await prisma.association.update({ where: { id: existing.id }, data });
       return NextResponse.json(updated);
     }
-    const created = await prisma.association.create({ data });
+    const created = await prisma.association.create({ data: { ...data, tenantId: t.tenantId } });
     return NextResponse.json(created);
   } catch (e) {
     console.error("[association PUT]", e);

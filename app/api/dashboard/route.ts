@@ -1,19 +1,24 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireTenant } from "@/lib/tenant";
 
 export async function GET() {
+  const t = await requireTenant();
+  if (t instanceof NextResponse) return t;
+
   const annee = new Date().getFullYear();
   const debut = new Date(`${annee}-01-01`);
-  const fin = new Date(`${annee}-12-31`);
+  const fin   = new Date(`${annee}-12-31`);
 
-  const actif = { status: "actif" };
+  const base  = { tenantId: t.tenantId };
+  const actif = { ...base, status: "actif" };
 
   const [totalCerfa, totalDons, cerfasAnnee, totalDonateurs, derniersCerfa, parMois, parMode] = await Promise.all([
     prisma.cerfa.count({ where: actif }),
     prisma.cerfa.aggregate({ _sum: { montant: true }, where: { ...actif, dateDon: { gte: debut, lte: fin } } }),
     prisma.cerfa.count({ where: { ...actif, dateDon: { gte: debut, lte: fin } } }),
-    prisma.donateur.count(),
+    prisma.donateur.count({ where: base }),
     prisma.cerfa.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
@@ -34,7 +39,6 @@ export async function GET() {
     }),
   ]);
 
-  // Agréger par mois
   const parMoisAgrege: Record<number, { total: number; count: number }> = {};
   for (const c of parMois) {
     const mois = new Date(c.dateDon).getMonth();
