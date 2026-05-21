@@ -36,7 +36,7 @@ export async function GET() {
         }),
         prisma.user.findFirst({
           where: { tenantId: assoc.tenantId },
-          select: { email: true, createdAt: true },
+          select: { email: true, createdAt: true, status: true },
         }),
       ]);
 
@@ -46,6 +46,7 @@ export async function GET() {
         nom:           assoc.nom,
         ville:         assoc.ville,
         email:         user?.email ?? null,
+        userStatus:    user?.status ?? "active",
         createdAt:     assoc.createdAt,
         nbDonateurs,
         nbCerfas,

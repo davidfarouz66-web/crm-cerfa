@@ -33,15 +33,40 @@ const modeLabel: Record<string, string> = {
 
 export default function DashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/dashboard").then((r) => r.json()).then(setData);
+    fetch("/api/dashboard")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d?.error) { setError(true); return; }
+        setData(d);
+      })
+      .catch(() => setError(true));
   }, []);
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 gap-3">
+        <p className="text-slate-500 text-sm">Erreur de chargement</p>
+        <button onClick={() => { setError(false); window.location.reload(); }}
+          className="text-blue-600 text-sm underline">Réessayer</button>
+      </div>
+    );
+  }
 
   if (!data) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      <div className="p-6 md:p-8 space-y-6 animate-pulse">
+        <div className="h-7 bg-slate-100 rounded w-48" />
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => <div key={i} className="bg-slate-100 rounded-2xl h-28" />)}
+        </div>
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 bg-slate-100 rounded-2xl h-72" />
+          <div className="bg-slate-100 rounded-2xl h-72" />
+        </div>
+        <div className="bg-slate-100 rounded-2xl h-48" />
       </div>
     );
   }

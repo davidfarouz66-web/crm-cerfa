@@ -98,6 +98,7 @@ interface CerfaData {
   natureDon?: string | null;
   association: {
     nom: string; adresse?: string | null; codePostal?: string | null; ville?: string | null;
+    pays?: string | null;
     siret?: string | null; rna?: string | null; objetSocial?: string | null;
     qualiteOrganisme?: string | null; representant?: string | null;
     logoUrl?: string | null; signatureUrl?: string | null;
@@ -219,7 +220,7 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   // ────────────────────────────────────────────────────────────────────────────
   //  2. IDENTITÉ — bordure + séparateur vertical
   // ────────────────────────────────────────────────────────────────────────────
-  const idH = 54;
+  const idH = 68;
   const idY = y - idH;
 
   // 2e rectangle : fond blanc, aucune bordure, aucun séparateur
@@ -246,6 +247,8 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   if (data.association.adresse) txt(clean(data.association.adresse), logoEndX, idY + idH - 30, 8, F, GREY);
   const assocVille = [data.association.codePostal, data.association.ville].filter(Boolean).join(" ");
   if (assocVille) txt(clean(assocVille), logoEndX, idY + idH - 42, 8, F, GREY);
+  const assocPays = data.association.pays || "France";
+  txt(clean(assocPays), logoEndX, idY + idH - 54, 8, F, GREY);
 
   // Donateur (droite)
   const donX = W/2 + 12;

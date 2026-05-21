@@ -78,8 +78,19 @@ export default function DonateursPage() {
 
       {/* Liste */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 divide-y divide-slate-50">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center justify-between p-4 animate-pulse">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-slate-100 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3 bg-slate-100 rounded w-1/3" />
+                  <div className="h-3 bg-slate-100 rounded w-1/2" />
+                </div>
+              </div>
+              <div className="h-3 w-8 bg-slate-100 rounded" />
+            </div>
+          ))}
         </div>
       ) : (
         <>

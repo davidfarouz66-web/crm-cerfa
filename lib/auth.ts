@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
           });
 
           const result = await pool.query(
-            'SELECT id, email, name, role, password, "tenantId" FROM "User" WHERE email = $1',
+            'SELECT id, email, name, role, status, password, "tenantId" FROM "User" WHERE email = $1',
             [credentials.email]
           );
           await pool.end();
@@ -38,6 +38,9 @@ export const authOptions: NextAuthOptions = {
           const valid = await bcrypt.compare(credentials.password, user.password);
           console.log("[auth] password valid:", valid);
           if (!valid) return null;
+
+          if (user.status === "pending") throw new Error("PENDING");
+          if (user.status === "suspended") throw new Error("SUSPENDED");
 
           return { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId };
         } catch (err) {

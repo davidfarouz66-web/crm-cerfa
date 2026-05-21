@@ -4,9 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, FilePlus, FileText,
-  BarChart3, Settings, LogOut, Heart, Upload,
+  BarChart3, Settings, LogOut, Heart, Upload, Shield,
 } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -20,6 +20,8 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const role = (session?.user as { role?: string })?.role;
 
   return (
     <aside className="sidebar fixed left-0 top-0 h-full w-64 bg-slate-800 text-slate-300 flex flex-col z-30">
@@ -29,7 +31,7 @@ export default function Sidebar() {
             <Heart size={18} className="text-white" />
           </div>
           <div>
-            <p className="font-bold text-white text-sm">CRM CERFA</p>
+            <p className="font-bold text-white text-sm">Trouma-Pro</p>
             <p className="text-xs text-slate-400">Gestion des dons</p>
           </div>
         </div>
@@ -56,7 +58,20 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-700">
+      <div className="p-4 border-t border-slate-700 space-y-1">
+        {role === "superadmin" && (
+          <Link
+            href="/admin"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${
+              pathname.startsWith("/admin")
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-400 hover:bg-slate-700 hover:text-white"
+            }`}
+          >
+            <Shield size={18} />
+            Administration
+          </Link>
+        )}
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-sm text-slate-400 hover:bg-slate-700 hover:text-white transition-all"

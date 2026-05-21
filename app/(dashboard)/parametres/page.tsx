@@ -9,6 +9,7 @@ interface Association {
   adresse?: string;
   codePostal?: string;
   ville?: string;
+  pays?: string;
   siret?: string;
   rna?: string;
   objetSocial?: string;
@@ -170,9 +171,10 @@ export default function ParametresPage() {
           {assoc.logoUrl && <button onClick={() => setAssoc(p => ({ ...p, logoUrl: undefined }))} className="mt-2 text-xs text-red-500 hover:text-red-700 w-full text-center">Supprimer</button>}
         </div>
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-          <p className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+          <p className="text-sm font-semibold text-slate-700 mb-1 flex items-center gap-2">
             <ImageIcon size={15} /> Signature
           </p>
+          <p className="text-xs text-red-500 mb-3 font-medium">Obligatoire</p>
           <div onClick={() => sigRef.current?.click()}
             className="border-2 border-dashed border-slate-200 rounded-xl h-28 flex items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all overflow-hidden">
             {uploadingSig ? <Loader2 size={24} className="animate-spin text-blue-500" /> :
@@ -193,13 +195,13 @@ export default function ParametresPage() {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Nom de l&apos;association *</label>
-            <input name="nom" defaultValue={assoc.nom || ""} placeholder="A.C.T."
+            <input name="nom" defaultValue={assoc.nom || ""} placeholder="Nom de l'association"
               className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">N° RNA</label>
-              <input name="rna" defaultValue={assoc.rna || ""} placeholder="W922003899"
+              <input name="rna" defaultValue={assoc.rna || ""}
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
             </div>
             <div>
@@ -223,9 +225,14 @@ export default function ParametresPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">Ville</label>
-              <input name="ville" defaultValue={assoc.ville || ""} placeholder="Neuilly-sur-Seine"
+              <input name="ville" defaultValue={assoc.ville || ""} placeholder="Paris"
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
             </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">Pays</label>
+            <input name="pays" defaultValue={assoc.pays ?? "France"} placeholder="France"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-2">Objet social</label>
@@ -356,7 +363,7 @@ export default function ParametresPage() {
           </div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Numéro de départ</label>
           <p className="text-xs text-slate-400 mb-2">Le prochain CERFA sera au minimum ce numéro. Laissez à 0 pour numérotation automatique.</p>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <input type="number" name="cerfaSequence" min="0" step="1"
               defaultValue={assoc.cerfaSequence ?? 0}
               inputMode="numeric"

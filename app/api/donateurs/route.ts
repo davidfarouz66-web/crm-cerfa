@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenant, rejectIfReadOnly } from "@/lib/tenant";
 
 export async function GET(req: Request) {
   const t = await requireTenant();
@@ -53,6 +53,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const t = await requireTenant();
   if (t instanceof NextResponse) return t;
+  const ro = rejectIfReadOnly(t); if (ro) return ro;
 
   try {
     const body = await req.json();

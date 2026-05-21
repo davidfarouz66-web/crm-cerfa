@@ -23,6 +23,10 @@ function NouveauCerfaForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState<{ numeroCerfa: string; pdfPath: string } | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const [selectedDonateurId, setSelectedDonateurId] = useState(preselectedId);
+  const selectedDonateur = donateurs.find(d => d.id === selectedDonateurId);
+  const isEntreprise = selectedDonateur?.type === "entreprise";
+  const defaultArticle = isEntreprise ? "238bis" : "200";
   const [eligibiliteOk, setEligibiliteOk] = useState<boolean | null>(null);
   const [chronoWarning, setChronoWarning] = useState<{ dernierNumero: string; dernierDate: string } | null>(null);
   const [derogationConfirmed, setDerogationConfirmed] = useState(false);
@@ -121,7 +125,8 @@ function NouveauCerfaForm() {
       {/* Donateur */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">Donateur *</label>
-        <select name="donateurId" required defaultValue={preselectedId}
+        <select name="donateurId" required value={selectedDonateurId}
+          onChange={e => setSelectedDonateurId(e.target.value)}
           className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white text-slate-800">
           <option value="">Sélectionner un donateur...</option>
           {donateurs.map((d) => (
@@ -133,22 +138,13 @@ function NouveauCerfaForm() {
         </Link>
       </div>
 
-      {/* Dates et montant */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Date du don *</label>
-          <input type="date" name="dateDon" required
-            defaultValue={new Date().toISOString().split("T")[0]}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-          <p className="text-xs text-slate-400 mt-1">Peut être antérieure à aujourd&apos;hui</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Date d&apos;émission du reçu *</label>
-          <input type="date" name="dateEmission" required
-            defaultValue={new Date().toISOString().split("T")[0]}
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-          <p className="text-xs text-slate-400 mt-1">Doit rester chronologique</p>
-        </div>
+      {/* Date et montant */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-2">Date d&apos;émission du reçu *</label>
+        <input type="date" name="dateEmission" required
+          defaultValue={new Date().toISOString().split("T")[0]}
+          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+        <p className="text-xs text-slate-400 mt-1">Doit rester chronologique</p>
       </div>
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">Montant (€) *</label>
@@ -161,7 +157,7 @@ function NouveauCerfaForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Nature du don *</label>
-          <select name="natureDon" required defaultValue="numeraire"
+          <select name="natureDon" required defaultValue="nature"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
             <option value="numeraire">Numéraire</option>
             <option value="nature">En nature</option>
@@ -191,7 +187,7 @@ function NouveauCerfaForm() {
             { value: "978", label: "Art. 978", sub: "IFI" },
           ].map((a) => (
             <label key={a.value} className="relative">
-              <input type="radio" name="articleFiscal" value={a.value} required className="peer sr-only" defaultChecked={a.value === "200"} />
+              <input type="radio" name="articleFiscal" value={a.value} required className="peer sr-only" checked={defaultArticle === a.value} onChange={() => {}} />
               <span className="flex flex-col items-center justify-center p-3 border-2 border-slate-200 rounded-xl cursor-pointer text-sm peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 hover:border-slate-300 transition-all">
                 <span className="font-medium">{a.label}</span>
                 <span className="text-xs opacity-70">{a.sub}</span>
@@ -212,7 +208,7 @@ function NouveauCerfaForm() {
             { value: "cb", label: "💳 CB" },
           ].map((m) => (
             <label key={m.value} className="relative">
-              <input type="radio" name="modePaiement" value={m.value} required className="peer sr-only" />
+              <input type="radio" name="modePaiement" value={m.value} required className="peer sr-only" defaultChecked={m.value === "virement"} />
               <span className="flex items-center justify-center p-3 border-2 border-slate-200 rounded-xl cursor-pointer text-sm text-slate-600 peer-checked:border-blue-500 peer-checked:bg-blue-50 peer-checked:text-blue-700 hover:border-slate-300 transition-all">
                 {m.label}
               </span>
@@ -221,14 +217,8 @@ function NouveauCerfaForm() {
         </div>
       </div>
 
-      {/* Objet du don */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Objet du don</label>
-        <input name="objetDon" placeholder="Aide aux familles, formation, équipement..."
-          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-      </div>
 
-      {/* Alerte dérogation chronologique */}
+{/* Alerte dérogation chronologique */}
       {chronoWarning && (
         <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 space-y-3">
           <div className="flex gap-2">

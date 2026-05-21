@@ -7,7 +7,7 @@ import { generateNumeroCerfa } from "@/lib/utils";
 import { generateCerfaPDF } from "@/lib/pdf";
 import { generateMecenaPDF } from "@/lib/pdf-mecena";
 import { uploadPDF } from "@/lib/storage";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenant, rejectIfReadOnly } from "@/lib/tenant";
 
 export async function GET(req: Request) {
   const t = await requireTenant();
@@ -58,10 +58,13 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const t = await requireTenant();
   if (t instanceof NextResponse) return t;
+  const ro = rejectIfReadOnly(t); if (ro) return ro;
 
   const body = await req.json();
   const session = await getServerSession(authOptions);
 
+  // dateDon = dateEmission si non fourni (champ supprimé du formulaire)
+  if (!body.dateDon) body.dateDon = body.dateEmission || new Date().toISOString().split("T")[0];
   const annee = new Date(body.dateDon).getFullYear();
 
   const association = await prisma.association.findFirst({ where: { tenantId: t.tenantId } });

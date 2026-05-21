@@ -21,6 +21,10 @@ export default function LoginPage() {
     setLoading(false);
     if (res?.ok) {
       router.push("/dashboard");
+    } else if (res?.error === "PENDING") {
+      setError("Votre compte est en attente de validation par l'administrateur.");
+    } else if (res?.error === "SUSPENDED") {
+      setError("Votre compte a été suspendu. Contactez l'administrateur.");
     } else {
       setError("Email ou mot de passe incorrect");
     }
@@ -33,7 +37,7 @@ export default function LoginPage() {
           <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Heart size={28} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">CRM CERFA</h1>
+          <h1 className="text-3xl font-bold text-white">Trouma-Pro</h1>
           <p className="text-blue-200 mt-2">Gestion des dons & reçus fiscaux</p>
         </div>
 
@@ -54,7 +58,10 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Mot de passe</label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-slate-700">Mot de passe</label>
+                <Link href="/forgot-password" className="text-xs text-blue-600 hover:underline">Mot de passe oublié ?</Link>
+              </div>
               <input
                 type="password"
                 value={password}

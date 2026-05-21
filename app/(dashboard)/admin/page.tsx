@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Building2, Users, FileText, Euro, AlertTriangle, CheckCircle, Clock, Search } from "lucide-react";
+import { Building2, Users, FileText, Euro, AlertTriangle, CheckCircle, Clock, Search, UserCheck, UserX, Hourglass, Eye } from "lucide-react";
 
 interface Tenant {
   id: string;
@@ -11,6 +11,7 @@ interface Tenant {
   nom: string;
   ville: string | null;
   email: string | null;
+  userStatus: string;
   createdAt: string;
   nbDonateurs: number;
   nbCerfas: number;
@@ -34,24 +35,57 @@ function daysSince(d: string | null) {
   return Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
 }
 
+function StatusBadge({ status }: { status: string }) {
+  if (status === "active")    return <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full"><CheckCircle size={11} /> Actif</span>;
+  if (status === "pending")   return <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full"><Hourglass size={11} /> En attente</span>;
+  if (status === "suspended") return <span className="inline-flex items-center gap-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full"><UserX size={11} /> Suspendu</span>;
+  return <span className="text-xs text-slate-400">{status}</span>;
+}
+
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [updating, setUpdating] = useState<string | null>(null);
+  const [consulting, setConsulting] = useState<string | null>(null);
 
   const role = (session?.user as { role?: string })?.role;
+
+  function loadTenants() {
+    fetch("/api/admin/tenants")
+      .then(r => r.json())
+      .then(d => { setTenants(d); setLoading(false); });
+  }
 
   useEffect(() => {
     if (status === "unauthenticated") { router.push("/login"); return; }
     if (status === "authenticated" && role !== "superadmin") { router.push("/dashboard"); return; }
-    if (status === "authenticated" && role === "superadmin") {
-      fetch("/api/admin/tenants")
-        .then(r => r.json())
-        .then(d => { setTenants(d); setLoading(false); });
-    }
+    if (status === "authenticated" && role === "superadmin") loadTenants();
   }, [status, role, router]);
+
+  async function consulter(tenantId: string, nom: string) {
+    setConsulting(tenantId);
+    await fetch("/api/admin/view-as", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenantId, nom }),
+    });
+    router.push("/dashboard");
+    router.refresh();
+  }
+
+  async function setStatus(tenantId: string, newStatus: string) {
+    setUpdating(tenantId);
+    await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tenantId, status: newStatus }),
+    });
+    setTenants(prev => prev.map(t => t.tenantId === tenantId ? { ...t, userStatus: newStatus } : t));
+    setUpdating(null);
+  }
 
   const filtered = tenants.filter(t =>
     t.nom.toLowerCase().includes(q.toLowerCase()) ||
@@ -59,10 +93,11 @@ export default function AdminPage() {
     (t.ville || "").toLowerCase().includes(q.toLowerCase())
   );
 
+  const totalActifs   = tenants.filter(t => t.userStatus === "active").length;
+  const totalPending  = tenants.filter(t => t.userStatus === "pending").length;
   const totalCerfas   = tenants.reduce((s, t) => s + t.nbCerfas, 0);
   const totalDons     = tenants.reduce((s, t) => s + t.totalDons, 0);
   const totalClients  = tenants.length;
-  const nonEligibles  = tenants.filter(t => !t.eligible).length;
 
   if (status === "loading" || loading) {
     return (
@@ -92,10 +127,10 @@ export default function AdminPage() {
         {/* KPIs globaux */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: "Clients actifs",   value: totalClients,          icon: Building2, color: "blue"   },
-            { label: "CERFA émis",       value: totalCerfas,           icon: FileText,  color: "indigo" },
-            { label: "Dons collectés",   value: formatMontant(totalDons), icon: Euro,   color: "emerald"},
-            { label: "Non éligibles",    value: nonEligibles,          icon: AlertTriangle, color: nonEligibles > 0 ? "red" : "slate" },
+            { label: "Comptes actifs",    value: totalActifs,              icon: UserCheck,  color: "emerald" },
+            { label: "En attente",        value: totalPending,             icon: Hourglass,  color: totalPending > 0 ? "amber" : "slate" },
+            { label: "CERFA émis",        value: totalCerfas,              icon: FileText,   color: "indigo" },
+            { label: "Dons collectés",    value: formatMontant(totalDons), icon: Euro,       color: "blue" },
           ].map(({ label, value, icon: Icon, color }) => (
             <div key={label} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
               <div className={`w-9 h-9 rounded-lg bg-${color}-100 flex items-center justify-center mb-3`}>
@@ -120,31 +155,37 @@ export default function AdminPage() {
         </div>
 
         {/* Tableau des clients */}
-        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-100 text-xs text-slate-500 uppercase tracking-wide">
                 <th className="text-left px-4 py-3 font-medium">Association</th>
                 <th className="text-left px-4 py-3 font-medium">Email</th>
+                <th className="text-center px-4 py-3 font-medium">Statut</th>
                 <th className="text-center px-4 py-3 font-medium">Éligible</th>
                 <th className="text-right px-4 py-3 font-medium">Donateurs</th>
                 <th className="text-right px-4 py-3 font-medium">CERFA</th>
                 <th className="text-right px-4 py-3 font-medium">Total dons</th>
                 <th className="text-left px-4 py-3 font-medium">Dernier CERFA</th>
                 <th className="text-left px-4 py-3 font-medium">Créé le</th>
+                <th className="text-center px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filtered.map(t => {
                 const jours = daysSince(t.dernierCerfa);
                 const inactif = jours !== null && jours > 60;
+                const busy = updating === t.tenantId;
                 return (
-                  <tr key={t.id} className={`hover:bg-slate-50 transition-colors ${inactif ? "bg-amber-50/40" : ""}`}>
+                  <tr key={t.id} className={`hover:bg-slate-50 transition-colors ${t.userStatus === "suspended" ? "bg-red-50/30" : t.userStatus === "pending" ? "bg-amber-50/30" : inactif ? "bg-amber-50/20" : ""}`}>
                     <td className="px-4 py-3">
                       <p className="font-medium text-slate-800">{t.nom}</p>
                       {t.ville && <p className="text-xs text-slate-400">{t.ville}</p>}
                     </td>
                     <td className="px-4 py-3 text-slate-600 text-xs">{t.email || "—"}</td>
+                    <td className="px-4 py-3 text-center">
+                      <StatusBadge status={t.userStatus} />
+                    </td>
                     <td className="px-4 py-3 text-center">
                       {t.eligible
                         ? <CheckCircle size={16} className="text-emerald-500 mx-auto" />
@@ -166,12 +207,41 @@ export default function AdminPage() {
                         : <span className="text-xs text-slate-400">Aucun</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-400">{formatDate(t.createdAt)}</td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => consulter(t.tenantId, t.nom)}
+                          disabled={consulting === t.tenantId}
+                          className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
+                        >
+                          <Eye size={12} /> Consulter
+                        </button>
+                        {t.userStatus !== "active" && (
+                          <button
+                            onClick={() => setStatus(t.tenantId, "active")}
+                            disabled={busy}
+                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors disabled:opacity-50"
+                          >
+                            <UserCheck size={12} /> Activer
+                          </button>
+                        )}
+                        {t.userStatus !== "suspended" && (
+                          <button
+                            onClick={() => setStatus(t.tenantId, "suspended")}
+                            disabled={busy}
+                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 transition-colors disabled:opacity-50"
+                          >
+                            <UserX size={12} /> Suspendre
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 );
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-400 text-sm">
+                  <td colSpan={10} className="px-4 py-8 text-center text-slate-400 text-sm">
                     Aucun résultat
                   </td>
                 </tr>

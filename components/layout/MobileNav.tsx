@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, X, BarChart3, Settings, LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, X, BarChart3, Settings, LogOut, Shield } from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +16,8 @@ const navItems = [
 export default function MobileNav() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+  const role = (session?.user as { role?: string })?.role;
 
   return (
     <>
@@ -32,6 +34,12 @@ export default function MobileNav() {
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50">
             <Settings size={17} className="text-slate-400" /> Paramètres
           </Link>
+          {role === "superadmin" && (
+            <Link href="/admin" onClick={() => setOpen(false)}
+              className="flex items-center gap-3 px-4 py-3.5 text-sm text-blue-700 hover:bg-blue-50 transition-colors border-t border-slate-50">
+              <Shield size={17} className="text-blue-500" /> Administration
+            </Link>
+          )}
           <button onClick={() => { setOpen(false); signOut({ callbackUrl: "/login" }); }}
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-slate-100 w-full">
             <LogOut size={17} /> Déconnexion

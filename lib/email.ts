@@ -1,18 +1,6 @@
 import nodemailer from "nodemailer";
 import { downloadPDF } from "./storage";
 
-export function createTransporter() {
-  return nodemailer.createTransport({
-    host:   process.env.SMTP_HOST   || "smtp.gmail.com",
-    port:   parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_PORT   === "465",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-}
-
 export async function sendCerfaEmail({
   to,
   toName,
@@ -30,20 +18,28 @@ export async function sendCerfaEmail({
   pdfPath: string;
   associationNom: string;
 }) {
-  const transporter = createTransporter();
-  const from = process.env.SMTP_FROM_NAME
-    ? `"${process.env.SMTP_FROM_NAME}" <${process.env.SMTP_FROM}>`
-    : process.env.SMTP_FROM;
+  const transporter = nodemailer.createTransport({
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
+    auth: {
+      user: process.env.BREVO_SMTP_USER,
+      pass: process.env.BREVO_SMTP_PASS,
+    },
+  });
 
   const dateFr = new Date(dateDon).toLocaleDateString("fr-FR", {
     day: "numeric", month: "long", year: "numeric",
   });
   const montantFr = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(montant);
 
-  // Téléchargement depuis Supabase Storage (fonctionne en local ET sur Vercel)
   const storageFilename = pdfPath.replace(/^\/api\/pdf\//, "");
   const pdfBytes = await downloadPDF(storageFilename);
   const fileName = `CERFA-${numeroCerfa.replace("/", "-")}.pdf`;
+
+  const from = process.env.BREVO_FROM_NAME
+    ? `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`
+    : process.env.BREVO_FROM_EMAIL;
 
   await transporter.sendMail({
     from,
@@ -79,8 +75,8 @@ export async function sendCerfaEmail({
       </div>
     `,
     attachments: [{
-      filename:    fileName,
-      content:     Buffer.from(pdfBytes),
+      filename: fileName,
+      content: Buffer.from(pdfBytes),
       contentType: "application/pdf",
     }],
   });

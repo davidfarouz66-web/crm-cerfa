@@ -26,7 +26,7 @@ export async function POST(req: Request) {
 
     await prisma.$transaction([
       prisma.user.create({
-        data: { email, password: hash, name: nomAssociation, role: "admin", tenantId },
+        data: { email, password: hash, name: nomAssociation, role: "admin", status: "pending", tenantId },
       }),
       prisma.association.create({
         data: { nom: nomAssociation, tenantId },
