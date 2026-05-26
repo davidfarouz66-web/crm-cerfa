@@ -57,7 +57,7 @@ export default function DashboardPage() {
 
   if (!data) {
     return (
-      <div className="p-6 md:p-8 space-y-6 animate-pulse">
+      <div className="p-4 md:p-8 space-y-4 md:space-y-6 animate-pulse">
         <div className="h-7 bg-slate-100 rounded w-48" />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => <div key={i} className="bg-slate-100 rounded-2xl h-28" />)}
@@ -79,22 +79,22 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-800">Tableau de bord</h1>
-        <p className="text-slate-500 mt-1">Vue d&apos;ensemble de vos dons — {data.annee}</p>
+    <div className="p-4 md:p-8">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-slate-800">Tableau de bord</h1>
+        <p className="text-slate-500 mt-1 text-sm">Vue d&apos;ensemble de vos dons — {data.annee}</p>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
         {stats.map((s) => {
           const Icon = s.icon;
           return (
-            <div key={s.label} className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-              <div className={`w-10 h-10 rounded-xl ${s.color} flex items-center justify-center mb-3`}>
-                <Icon size={20} className="text-white" />
+            <div key={s.label} className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100">
+              <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl ${s.color} flex items-center justify-center mb-3`}>
+                <Icon size={18} className="text-white" />
               </div>
-              <p className="text-2xl font-bold text-slate-800">{s.value}</p>
+              <p className="text-xl md:text-2xl font-bold text-slate-800">{s.value}</p>
               <p className="text-sm font-medium text-slate-600 mt-0.5">{s.label}</p>
               <p className="text-xs text-slate-400 mt-0.5">{s.sub}</p>
             </div>
@@ -102,11 +102,11 @@ export default function DashboardPage() {
         })}
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 mb-6">
+      <div className="grid lg:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
         {/* Graphique mensuel */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h2 className="font-semibold text-slate-700 mb-4">Dons par mois ({data.annee})</h2>
-          <ResponsiveContainer width="100%" height={220}>
+        <div className="lg:col-span-2 bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100">
+          <h2 className="font-semibold text-slate-700 mb-4 text-sm md:text-base">Dons par mois ({data.annee})</h2>
+          <ResponsiveContainer width="100%" height={200}>
             <BarChart data={data.chartMois}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="mois" tick={{ fontSize: 12 }} />
@@ -118,8 +118,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Par mode de paiement */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-          <h2 className="font-semibold text-slate-700 mb-4">Par mode de paiement</h2>
+        <div className="bg-white rounded-2xl p-4 md:p-6 shadow-sm border border-slate-100">
+          <h2 className="font-semibold text-slate-700 mb-4 text-sm md:text-base">Par mode de paiement</h2>
           <div className="space-y-3">
             {data.parMode.map((m) => (
               <div key={m.modePaiement} className="flex items-center justify-between">

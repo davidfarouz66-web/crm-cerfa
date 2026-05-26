@@ -110,10 +110,10 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4">
+      <div className="bg-white border-b border-slate-200 px-4 md:px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-slate-800">⚙️ Super-Admin</h1>
+            <h1 className="text-lg md:text-xl font-bold text-slate-800">⚙️ Super-Admin</h1>
             <p className="text-sm text-slate-500">Vue globale de tous les comptes clients</p>
           </div>
           <span className="bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
@@ -122,21 +122,21 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-6 space-y-4 md:space-y-6">
 
         {/* KPIs globaux */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {[
             { label: "Comptes actifs",    value: totalActifs,              icon: UserCheck,  color: "emerald" },
             { label: "En attente",        value: totalPending,             icon: Hourglass,  color: totalPending > 0 ? "amber" : "slate" },
             { label: "CERFA émis",        value: totalCerfas,              icon: FileText,   color: "indigo" },
             { label: "Dons collectés",    value: formatMontant(totalDons), icon: Euro,       color: "blue" },
           ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="bg-white rounded-xl border border-slate-100 p-4 shadow-sm">
-              <div className={`w-9 h-9 rounded-lg bg-${color}-100 flex items-center justify-center mb-3`}>
+            <div key={label} className="bg-white rounded-xl border border-slate-100 p-3 md:p-4 shadow-sm">
+              <div className={`w-9 h-9 rounded-lg bg-${color}-100 flex items-center justify-center mb-2 md:mb-3`}>
                 <Icon size={18} className={`text-${color}-600`} />
               </div>
-              <p className="text-2xl font-bold text-slate-800">{value}</p>
+              <p className="text-xl md:text-2xl font-bold text-slate-800 truncate">{value}</p>
               <p className="text-xs text-slate-500 mt-0.5">{label}</p>
             </div>
           ))}

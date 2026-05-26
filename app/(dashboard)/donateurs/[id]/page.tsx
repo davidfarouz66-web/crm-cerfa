@@ -25,19 +25,19 @@ export default async function DonateurPage({ params }: { params: Promise<{ id: s
     : `${donateur.prenom || ""} ${donateur.nom}`.trim();
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/donateurs" className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+    <div className="p-4 md:p-8 max-w-3xl mx-auto">
+      <div className="flex items-center gap-2 md:gap-3 mb-6">
+        <Link href="/donateurs" className="p-2 rounded-lg hover:bg-slate-100 transition-colors shrink-0">
           <ArrowLeft size={20} className="text-slate-600" />
         </Link>
-        <h1 className="text-2xl font-bold text-slate-800 flex-1">{nom}</h1>
+        <h1 className="text-lg md:text-2xl font-bold text-slate-800 flex-1 truncate">{nom}</h1>
         <Link href={`/donateurs/${donateur.id}/edit`}
-          className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-          <Pencil size={14} /> Modifier
+          className="flex items-center gap-1.5 px-3 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors shrink-0">
+          <Pencil size={14} /> <span className="hidden sm:inline">Modifier</span>
         </Link>
         <Link href={`/cerfa/nouveau?donateurId=${donateur.id}`}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
-          <FilePlus size={14} /> CERFA
+          className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shrink-0">
+          <FilePlus size={14} /> <span className="hidden sm:inline">CERFA</span><span className="sm:hidden">+CERFA</span>
         </Link>
       </div>
 
@@ -83,12 +83,12 @@ export default async function DonateurPage({ params }: { params: Promise<{ id: s
 
       {/* Résumé dons */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-center">
-          <p className="text-2xl font-bold text-slate-800">{donateur.cerfas.length}</p>
+        <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100 text-center">
+          <p className="text-xl md:text-2xl font-bold text-slate-800">{donateur.cerfas.length}</p>
           <p className="text-sm text-slate-500 mt-1">CERFA émis</p>
         </div>
-        <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 text-center">
-          <p className="text-2xl font-bold text-blue-600">{formatMontant(totalDons)}</p>
+        <div className="bg-white rounded-2xl p-4 md:p-5 shadow-sm border border-slate-100 text-center">
+          <p className="text-xl md:text-2xl font-bold text-blue-600 truncate">{formatMontant(totalDons)}</p>
           <p className="text-sm text-slate-500 mt-1">Total des dons</p>
         </div>
       </div>
@@ -100,25 +100,25 @@ export default async function DonateurPage({ params }: { params: Promise<{ id: s
         </div>
         <div className="divide-y divide-slate-50">
           {donateur.cerfas.map((c) => (
-            <div key={c.id} className="flex items-center justify-between p-4">
-              <div>
-                <p className="font-medium text-sm text-slate-800">{c.numeroCerfa}</p>
+            <div key={c.id} className="flex items-center justify-between p-3 md:p-4 gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium text-sm text-slate-800 truncate">{c.numeroCerfa}</p>
                 <p className="text-xs text-slate-400 mt-0.5">{formatDate(c.dateDon)} · {modeLabel[c.modePaiement] || c.modePaiement}</p>
               </div>
-              <div className="flex items-center gap-3">
-                <p className="font-semibold text-slate-800">{formatMontant(c.montant)}</p>
+              <div className="flex items-center gap-2 shrink-0">
+                <p className="font-semibold text-slate-800 text-sm">{formatMontant(c.montant)}</p>
                 {c.sentAt ? (
-                  <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                  <span className="hidden sm:flex items-center gap-1 text-xs font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
                     <CheckCircle size={11} /> Envoyé
                   </span>
                 ) : (
-                  <span className="flex items-center gap-1 text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                  <span className="hidden sm:flex items-center gap-1 text-xs font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
                     <Clock size={11} /> Non envoyé
                   </span>
                 )}
                 {c.pdfPath && (
                   <a href={c.pdfPath} target="_blank" rel="noopener noreferrer"
-                    className="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
+                    className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors">
                     <Download size={14} />
                   </a>
                 )}

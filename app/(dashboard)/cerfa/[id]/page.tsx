@@ -80,13 +80,13 @@ export default function CerfaDetailPage() {
   ];
 
   return (
-    <div className="p-6 md:p-8 max-w-2xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/cerfa" className="p-2 rounded-lg hover:bg-slate-100 transition-colors">
+    <div className="p-4 md:p-8 max-w-2xl mx-auto">
+      <div className="flex items-center gap-2 md:gap-3 mb-6">
+        <Link href="/cerfa" className="p-2 rounded-lg hover:bg-slate-100 transition-colors shrink-0">
           <ArrowLeft size={20} className="text-slate-600" />
         </Link>
-        <div className="flex-1">
-          <h1 className={`text-2xl font-bold ${cerfa.status === "annulé" ? "text-slate-400 line-through" : "text-slate-800"}`}>
+        <div className="flex-1 min-w-0">
+          <h1 className={`text-lg md:text-2xl font-bold truncate ${cerfa.status === "annulé" ? "text-slate-400 line-through" : "text-slate-800"}`}>
             {cerfa.numeroCerfa}
           </h1>
           <div className="flex items-center gap-2 mt-1">
@@ -107,26 +107,26 @@ export default function CerfaDetailPage() {
             ) : null}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           {cerfa.pdfPath && (
             <a href={cerfa.pdfPath} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
+              className="flex items-center gap-1.5 bg-blue-600 text-white px-2.5 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors">
               <Download size={15} />
               <span className="hidden sm:inline">PDF</span>
             </a>
           )}
           <button onClick={() => { setShowSendModal(true); setSendResult(null); }}
-            className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
+            className="flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-2 rounded-xl text-sm font-medium hover:bg-emerald-100 transition-colors">
             <Send size={15} />
             <span className="hidden sm:inline">Envoyer</span>
           </button>
           <Link href={`/cerfa/${id}/edit`}
-            className="flex items-center gap-2 bg-slate-100 text-slate-700 px-3 py-2 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors">
+            className="flex items-center gap-1.5 bg-slate-100 text-slate-700 px-2.5 py-2 rounded-xl text-sm font-medium hover:bg-slate-200 transition-colors">
             <Pencil size={15} />
             <span className="hidden sm:inline">Modifier</span>
           </Link>
           <button onClick={handleDelete} disabled={deleting || cerfa.status === "annulé"}
-            className="flex items-center gap-2 bg-red-50 text-red-600 px-3 py-2 rounded-xl text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition-colors">
+            className="flex items-center gap-1.5 bg-red-50 text-red-600 px-2.5 py-2 rounded-xl text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition-colors">
             {deleting ? <Loader2 size={15} className="animate-spin" /> : <Ban size={15} />}
             <span className="hidden sm:inline">{cerfa.status === "annulé" ? "Annulé" : "Annuler"}</span>
           </button>
