@@ -26,6 +26,13 @@ export async function downloadPDF(filename: string): Promise<Uint8Array> {
   return new Uint8Array(buf);
 }
 
+export async function deletePDF(filename: string): Promise<void> {
+  const { error } = await getSupabase().storage
+    .from(CERFA_BUCKET)
+    .remove([filename]);
+  if (error) console.warn(`Suppression PDF échouée (ignorée): ${error.message}`);
+}
+
 export async function uploadImage(filename: string, bytes: Buffer, mimeType: string): Promise<string> {
   const supabase = getSupabase();
   const { error } = await supabase.storage

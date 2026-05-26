@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, User, Pencil, Ban, Loader2, Send, X, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, Download, User, Pencil, Ban, Loader2, Send, X, CheckCircle, Clock, Trash2, AlertTriangle } from "lucide-react";
 import { formatMontant, formatDate } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 const modeLabel: Record<string, string> = {
   virement: "Virement bancaire",
@@ -24,12 +25,22 @@ interface Cerfa {
 export default function CerfaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { data: session } = useSession();
+  const role = (session?.user as { role?: string })?.role;
+  const isAdmin = role === "superadmin";
+
   const [cerfa, setCerfa] = useState<Cerfa | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendEmail, setSendEmail] = useState("");
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ ok?: boolean; error?: string } | null>(null);
+
+  // Suppression définitive
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [permanentDeleting, setPermanentDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     fetch(`/api/cerfa/${id}`).then((r) => {
@@ -58,6 +69,20 @@ export default function CerfaDetailPage() {
     await fetch(`/api/cerfa/${id}`, { method: "DELETE" });
     setCerfa((prev) => prev ? { ...prev, status: "annulé" } : prev);
     setDeleting(false);
+  };
+
+  const handlePermanentDelete = async () => {
+    if (deleteConfirm !== cerfa?.numeroCerfa) return;
+    setPermanentDeleting(true);
+    setDeleteError("");
+    const res = await fetch(`/api/cerfa/${id}?permanent=true`, { method: "DELETE" });
+    const data = await res.json();
+    if (data.ok) {
+      router.push("/cerfa");
+    } else {
+      setDeleteError(data.error || "Erreur lors de la suppression");
+      setPermanentDeleting(false);
+    }
   };
 
   if (!cerfa) return (
@@ -133,6 +158,17 @@ export default function CerfaDetailPage() {
         </div>
       </div>
 
+      {/* Bouton suppression définitive — superadmin uniquement */}
+      {isAdmin && (
+        <div className="mb-4 flex justify-end">
+          <button
+            onClick={() => { setShowDeleteModal(true); setDeleteConfirm(""); setDeleteError(""); }}
+            className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors border border-red-200">
+            <Trash2 size={13} /> Supprimer définitivement
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-4">
         <div className="flex items-center gap-3 mb-1">
           <User size={16} className="text-slate-400" />
@@ -187,6 +223,62 @@ export default function CerfaDetailPage() {
                 className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-colors">
                 {sending ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
                 {sending ? "Envoi…" : "Envoyer"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modale suppression définitive */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+                <AlertTriangle size={20} className="text-red-600" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-800">Suppression définitive</h2>
+                <p className="text-xs text-red-600 font-medium">Cette action est irréversible</p>
+              </div>
+              <button onClick={() => setShowDeleteModal(false)} className="ml-auto p-1 rounded-lg hover:bg-slate-100">
+                <X size={18} className="text-slate-500" />
+              </button>
+            </div>
+
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 mb-4 text-sm text-red-700 space-y-1">
+              <p>Le CERFA <strong>{cerfa.numeroCerfa}</strong> sera <strong>supprimé définitivement</strong> de la base de données.</p>
+              <p>Le PDF sera également supprimé du stockage. Cette action ne peut pas être annulée.</p>
+            </div>
+
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+              Pour confirmer, saisissez le numéro du CERFA :
+            </label>
+            <input
+              type="text"
+              value={deleteConfirm}
+              onChange={(e) => setDeleteConfirm(e.target.value)}
+              placeholder={cerfa.numeroCerfa}
+              className="w-full px-4 py-2.5 border border-red-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-400 mb-4 font-mono"
+            />
+
+            {deleteError && (
+              <div className="bg-red-50 text-red-600 px-4 py-2.5 rounded-xl text-sm mb-4">
+                {deleteError}
+              </div>
+            )}
+
+            <div className="flex gap-3">
+              <button onClick={() => setShowDeleteModal(false)}
+                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
+                Annuler
+              </button>
+              <button
+                onClick={handlePermanentDelete}
+                disabled={deleteConfirm !== cerfa.numeroCerfa || permanentDeleting}
+                className="flex-1 flex items-center justify-center gap-2 bg-red-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-red-700 disabled:opacity-40 transition-colors">
+                {permanentDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+                {permanentDeleting ? "Suppression…" : "Supprimer définitivement"}
               </button>
             </div>
           </div>

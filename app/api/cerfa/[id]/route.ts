@@ -4,7 +4,10 @@ import { prisma } from "@/lib/db";
 import { generateCerfaPDF } from "@/lib/pdf";
 import { generateMecenaPDF } from "@/lib/pdf-mecena";
 import { uploadPDF } from "@/lib/storage";
-import { requireTenant } from "@/lib/tenant";
+import { requireTenant, rejectIfReadOnly } from "@/lib/tenant";
+import { deletePDF } from "@/lib/storage";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const t = await requireTenant();
@@ -75,14 +78,38 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const t = await requireTenant();
   if (t instanceof NextResponse) return t;
+  const ro = rejectIfReadOnly(t); if (ro) return ro;
 
   const { id } = await params;
   const cerfa = await prisma.cerfa.findFirst({ where: { id, tenantId: t.tenantId } });
   if (!cerfa) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
 
+  const { searchParams } = new URL(req.url);
+  const permanent = searchParams.get("permanent") === "true";
+
+  if (permanent) {
+    // Suppression définitive : réservée aux admins
+    const session = await getServerSession(authOptions);
+    const role = (session?.user as { role?: string })?.role;
+    if (role !== "superadmin") {
+      return NextResponse.json({ error: "Réservé aux super-administrateurs" }, { status: 403 });
+    }
+
+    // Supprimer le PDF du stockage
+    if (cerfa.pdfPath) {
+      const filename = cerfa.pdfPath.replace(/^\/api\/pdf\//, "");
+      await deletePDF(filename).catch(() => {});
+    }
+
+    // Supprimer définitivement de la base
+    await prisma.cerfa.delete({ where: { id } });
+    return NextResponse.json({ ok: true, deleted: true });
+  }
+
+  // Annulation simple (soft delete)
   await prisma.cerfa.update({ where: { id }, data: { status: "annulé" } });
   return NextResponse.json({ ok: true });
 }
