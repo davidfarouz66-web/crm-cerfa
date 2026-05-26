@@ -71,12 +71,12 @@ export default function CerfaDetailPage() {
     : `${cerfa.donateur.prenom || ""} ${cerfa.donateur.nom}`.trim();
 
   const fields = [
-    { label: "N° CERFA",         value: cerfa.numeroCerfa },
-    { label: "Date du don",      value: formatDate(cerfa.dateDon) },
-    { label: "Montant",          value: formatMontant(cerfa.montant), highlight: true },
-    { label: "Mode de paiement", value: modeLabel[cerfa.modePaiement] || cerfa.modePaiement },
-    { label: "Objet du don",     value: cerfa.objetDon || "—" },
-    { label: "Date d'émission",  value: formatDate(cerfa.dateEmission) },
+    { label: "N° CERFA",               value: cerfa.numeroCerfa },
+    { label: "Date du paiement",        value: formatDate(cerfa.dateDon) },
+    { label: "Date d'émission du reçu", value: formatDate(cerfa.dateEmission) },
+    { label: "Montant",                 value: formatMontant(cerfa.montant), highlight: true },
+    { label: "Mode de paiement",        value: modeLabel[cerfa.modePaiement] || cerfa.modePaiement },
+    { label: "Objet du don",            value: cerfa.objetDon || "—" },
   ];
 
   return (

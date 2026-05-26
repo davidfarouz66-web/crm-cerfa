@@ -22,6 +22,7 @@ export default function EditCerfaPage() {
 
   const [form, setForm] = useState({
     dateDon:      "",
+    dateEmission: "",
     montant:      "",
     modePaiement: "virement",
     objetDon:     "",
@@ -33,6 +34,7 @@ export default function EditCerfaPage() {
       .then((d) => {
         setForm({
           dateDon:      d.dateDon?.slice(0, 10) ?? "",
+          dateEmission: d.dateEmission?.slice(0, 10) ?? "",
           montant:      String(d.montant ?? ""),
           modePaiement: d.modePaiement ?? "virement",
           objetDon:     d.objetDon ?? "",
@@ -76,10 +78,19 @@ export default function EditCerfaPage() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-5">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1.5">Date du don</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Date du paiement</label>
           <input type="date" required value={form.dateDon}
             onChange={(e) => setForm({ ...form, dateDon: e.target.value })}
             className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <p className="text-xs text-slate-400 mt-1">Date du virement / chèque / espèces</p>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1.5">Date d&apos;émission du reçu</label>
+          <input type="date" required value={form.dateEmission}
+            onChange={(e) => setForm({ ...form, dateEmission: e.target.value })}
+            className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <p className="text-xs text-slate-400 mt-1">Date de signature du CERFA</p>
         </div>
 
         <div>

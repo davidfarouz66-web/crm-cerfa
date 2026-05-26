@@ -39,6 +39,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     where: { id },
     data: {
       dateDon:      new Date(body.dateDon),
+      dateEmission: body.dateEmission ? new Date(body.dateEmission) : undefined,
       montant:      parseFloat(body.montant),
       modePaiement: body.modePaiement,
       objetDon:     body.objetDon || null,

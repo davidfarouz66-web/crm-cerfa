@@ -138,14 +138,25 @@ function NouveauCerfaForm() {
         </Link>
       </div>
 
-      {/* Date et montant */}
-      <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">Date d&apos;émission du reçu *</label>
-        <input type="date" name="dateEmission" required
-          defaultValue={new Date().toISOString().split("T")[0]}
-          className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-        <p className="text-xs text-slate-400 mt-1">Doit rester chronologique</p>
+      {/* Dates */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Date du paiement *</label>
+          <input type="date" name="dateDon" required
+            defaultValue={new Date().toISOString().split("T")[0]}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          <p className="text-xs text-slate-400 mt-1">Date du virement / chèque / espèces</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Date d&apos;émission du reçu *</label>
+          <input type="date" name="dateEmission" required
+            defaultValue={new Date().toISOString().split("T")[0]}
+            className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          <p className="text-xs text-slate-400 mt-1">Doit rester chronologique</p>
+        </div>
       </div>
+
+      {/* Montant */}
       <div>
         <label className="block text-sm font-medium text-slate-700 mb-2">Montant (€) *</label>
         <input type="number" name="montant" required min="0.01" step="0.01" placeholder="100.00"

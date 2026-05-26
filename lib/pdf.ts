@@ -393,6 +393,9 @@ export async function generateCerfaPDF(data: CerfaData): Promise<Uint8Array> {
   // Mode de versement (gauche)
   txt("Mode de versement :", MX, y, 8, FB, NAVY);
   txt(MODES[data.modePaiement] || data.modePaiement, MX + 136, y, 9, FB, BLK);
+  // Date du paiement réel sous le mode (ex: "du 15 janvier 2025")
+  const dateDonStr = "du " + dateFr(data.dateDon);
+  txt(dateDonStr, MX + 136, y - 14, 8.5, F, BLK);
 
   // Date et signature (droite — plus grand, bien centré)
   const sigX  = W / 2 + 10;

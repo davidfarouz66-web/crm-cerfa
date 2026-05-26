@@ -63,7 +63,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const session = await getServerSession(authOptions);
 
-  // dateDon = dateEmission si non fourni (champ supprimé du formulaire)
+  // dateDon = date du paiement réel (virement, chèque...) ; dateEmission = date de signature du reçu
   if (!body.dateDon) body.dateDon = body.dateEmission || new Date().toISOString().split("T")[0];
   const annee = new Date(body.dateDon).getFullYear();
 
