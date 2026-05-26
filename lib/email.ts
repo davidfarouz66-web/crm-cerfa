@@ -1,5 +1,13 @@
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import { downloadPDF } from "./storage";
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY);
+}
+
+const FROM = process.env.BREVO_FROM_NAME
+  ? `${process.env.BREVO_FROM_NAME} <${process.env.BREVO_FROM_EMAIL}>`
+  : process.env.BREVO_FROM_EMAIL!;
 
 export async function sendCerfaEmail({
   to,
@@ -18,16 +26,6 @@ export async function sendCerfaEmail({
   pdfPath: string;
   associationNom: string;
 }) {
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER || process.env.BREVO_SMTP_USER,
-      pass: process.env.SMTP_PASS || process.env.BREVO_SMTP_PASS,
-    },
-  });
-
   const dateFr = new Date(dateDon).toLocaleDateString("fr-FR", {
     day: "numeric", month: "long", year: "numeric",
   });
@@ -37,13 +35,9 @@ export async function sendCerfaEmail({
   const pdfBytes = await downloadPDF(storageFilename);
   const fileName = `CERFA-${numeroCerfa.replace("/", "-")}.pdf`;
 
-  const from = process.env.BREVO_FROM_NAME
-    ? `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`
-    : process.env.BREVO_FROM_EMAIL;
-
-  await transporter.sendMail({
-    from,
-    to: `"${toName}" <${to}>`,
+  await getResend().emails.send({
+    from: FROM,
+    to: `${toName} <${to}>`,
     subject: `Votre reçu fiscal ${numeroCerfa} — ${associationNom}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
@@ -76,8 +70,7 @@ export async function sendCerfaEmail({
     `,
     attachments: [{
       filename: fileName,
-      content: Buffer.from(pdfBytes),
-      contentType: "application/pdf",
+      content: Buffer.from(pdfBytes).toString("base64"),
     }],
   });
 }

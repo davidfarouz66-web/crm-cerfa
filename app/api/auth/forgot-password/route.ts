@@ -2,7 +2,11 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import crypto from "crypto";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
+
+const FROM = process.env.BREVO_FROM_NAME
+  ? `${process.env.BREVO_FROM_NAME} <${process.env.BREVO_FROM_EMAIL}>`
+  : process.env.BREVO_FROM_EMAIL!;
 
 export async function POST(req: Request) {
   const { email } = await req.json();
@@ -23,22 +27,10 @@ export async function POST(req: Request) {
 
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER || process.env.BREVO_SMTP_USER,
-      pass: process.env.SMTP_PASS || process.env.BREVO_SMTP_PASS,
-    },
-  });
+  const resend = new Resend(process.env.RESEND_API_KEY);
 
-  const from = process.env.BREVO_FROM_NAME
-    ? `"${process.env.BREVO_FROM_NAME}" <${process.env.BREVO_FROM_EMAIL}>`
-    : process.env.BREVO_FROM_EMAIL;
-
-  await transporter.sendMail({
-    from,
+  await resend.emails.send({
+    from: FROM,
     to: email,
     subject: "Réinitialisation de votre mot de passe — Trouma-Pro",
     html: `
