@@ -24,12 +24,12 @@ export async function POST(req: Request) {
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
   const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
+    host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
+    port: parseInt(process.env.SMTP_PORT || "587"),
+    secure: process.env.SMTP_SECURE === "true",
     auth: {
-      user: process.env.BREVO_SMTP_USER,
-      pass: process.env.BREVO_SMTP_PASS,
+      user: process.env.SMTP_USER || process.env.BREVO_SMTP_USER,
+      pass: process.env.SMTP_PASS || process.env.BREVO_SMTP_PASS,
     },
   });
 
