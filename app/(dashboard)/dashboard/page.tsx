@@ -22,6 +22,7 @@ interface DashboardData {
   chartMois: { mois: string; total: number; count: number }[];
   parMode: { modePaiement: string; _sum: { montant: number }; _count: number }[];
   annee: number;
+  assocNom?: string;
 }
 
 const modeLabel: Record<string, string> = {
@@ -82,7 +83,12 @@ export default function DashboardPage() {
     <div className="p-4 md:p-8">
       <div className="mb-6 md:mb-8">
         <h1 className="text-xl md:text-2xl font-bold text-slate-800">Tableau de bord</h1>
-        <p className="text-slate-500 mt-1 text-sm">Vue d&apos;ensemble de vos dons — {data.annee}</p>
+        <p className="text-slate-500 mt-1 text-sm">
+          {data.assocNom && (
+            <span className="font-semibold text-slate-700">{data.assocNom} · </span>
+          )}
+          Vue d&apos;ensemble {data.annee}
+        </p>
       </div>
 
       {/* Stats */}

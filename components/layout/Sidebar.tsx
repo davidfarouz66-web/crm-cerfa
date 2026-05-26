@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, FilePlus, FileText,
-  BarChart3, Settings, LogOut, Heart, Upload, Shield,
+  BarChart3, Settings, LogOut, Heart, Upload, Shield, Building2,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
@@ -22,12 +23,20 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
+  const [assocNom, setAssocNom] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/association")
+      .then((r) => r.json())
+      .then((d) => { if (d?.nom) setAssocNom(d.nom); })
+      .catch(() => {});
+  }, [pathname]); // recharge quand la page change (utile en mode view-as)
 
   return (
     <aside className="sidebar fixed left-0 top-0 h-full w-64 bg-slate-800 text-slate-300 flex flex-col z-30">
-      <div className="p-6 border-b border-slate-700">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center">
+      <div className="p-5 border-b border-slate-700">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center shrink-0">
             <Heart size={18} className="text-white" />
           </div>
           <div>
@@ -35,6 +44,12 @@ export default function Sidebar() {
             <p className="text-xs text-slate-400">Gestion des dons</p>
           </div>
         </div>
+        {assocNom && (
+          <div className="flex items-center gap-2 bg-slate-700/60 rounded-lg px-3 py-2">
+            <Building2 size={13} className="text-blue-400 shrink-0" />
+            <p className="text-xs text-slate-200 font-medium truncate">{assocNom}</p>
+          </div>
+        )}
       </div>
 
       <nav className="flex-1 p-4 space-y-1">

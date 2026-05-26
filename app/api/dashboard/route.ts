@@ -15,7 +15,7 @@ export async function GET() {
     const base  = { tenantId: t.tenantId };
     const actif = { ...base, status: "actif" };
 
-    const [totalCerfa, totalDons, cerfasAnnee, totalDonateurs, derniersCerfa, parMois, parMode] = await Promise.all([
+    const [totalCerfa, totalDons, cerfasAnnee, totalDonateurs, derniersCerfa, parMois, parMode, association] = await Promise.all([
       prisma.cerfa.count({ where: actif }),
       prisma.cerfa.aggregate({ _sum: { montant: true }, where: { ...actif, dateDon: { gte: debut, lte: fin } } }),
       prisma.cerfa.count({ where: { ...actif, dateDon: { gte: debut, lte: fin } } }),
@@ -38,6 +38,7 @@ export async function GET() {
         _count: { id: true },
         where: { ...actif, dateDon: { gte: debut, lte: fin } },
       }),
+      prisma.association.findFirst({ where: { tenantId: t.tenantId }, select: { nom: true } }),
     ]);
 
     const parMoisAgrege: Record<number, { total: number; count: number }> = {};
@@ -64,6 +65,7 @@ export async function GET() {
       chartMois,
       parMode: parMode.map(m => ({ ...m, _count: m._count.id })),
       annee,
+      assocNom: association?.nom || null,
     });
   } catch (e) {
     console.error("[dashboard] error:", e);
