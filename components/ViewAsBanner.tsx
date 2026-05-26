@@ -1,20 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Eye, Pencil, X } from "lucide-react";
 
 export default function ViewAsBanner() {
   const [nom, setNom] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const matchNom = document.cookie.match(/(?:^|;\s*)view_as_nom=([^;]+)/);
-    if (matchNom) setNom(decodeURIComponent(matchNom[1]));
+    setNom(matchNom ? decodeURIComponent(matchNom[1]) : null);
     const matchEdit = document.cookie.match(/(?:^|;\s*)view_as_edit=([^;]+)/);
-    if (matchEdit && matchEdit[1] === "true") setEditMode(true);
-  }, []);
+    setEditMode(matchEdit?.[1] === "true");
+  }, [pathname]); // relire les cookies à chaque changement de page
 
   if (!nom) return null;
 
