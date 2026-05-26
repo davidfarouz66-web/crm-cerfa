@@ -12,6 +12,8 @@ export default function ViewAsBanner() {
   useEffect(() => {
     const matchNom = document.cookie.match(/(?:^|;\s*)view_as_nom=([^;]+)/);
     if (matchNom) setNom(decodeURIComponent(matchNom[1]));
+    const matchEdit = document.cookie.match(/(?:^|;\s*)view_as_edit=([^;]+)/);
+    if (matchEdit && matchEdit[1] === "true") setEditMode(true);
   }, []);
 
   if (!nom) return null;

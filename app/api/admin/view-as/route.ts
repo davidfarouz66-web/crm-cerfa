@@ -26,7 +26,7 @@ export async function PATCH(req: Request) {
   const { edit } = await req.json();
   const res = NextResponse.json({ ok: true });
   if (edit) {
-    res.cookies.set("view_as_edit", "true", { httpOnly: true, sameSite: "lax", maxAge: 3600 });
+    res.cookies.set("view_as_edit", "true", { httpOnly: false, sameSite: "lax", maxAge: 3600 });
   } else {
     res.cookies.delete("view_as_edit");
   }
