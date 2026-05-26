@@ -18,9 +18,25 @@ export async function POST(req: Request) {
   return res;
 }
 
+export async function PATCH(req: Request) {
+  const session = await getServerSession(authOptions);
+  const role = (session?.user as SessionUser)?.role;
+  if (role !== "superadmin") return NextResponse.json({ error: "Interdit" }, { status: 403 });
+
+  const { edit } = await req.json();
+  const res = NextResponse.json({ ok: true });
+  if (edit) {
+    res.cookies.set("view_as_edit", "true", { httpOnly: true, sameSite: "lax", maxAge: 3600 });
+  } else {
+    res.cookies.delete("view_as_edit");
+  }
+  return res;
+}
+
 export async function DELETE() {
   const res = NextResponse.json({ ok: true });
   res.cookies.delete("view_as_tenant");
   res.cookies.delete("view_as_nom");
+  res.cookies.delete("view_as_edit");
   return res;
 }

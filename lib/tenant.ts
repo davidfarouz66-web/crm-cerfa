@@ -21,7 +21,8 @@ export async function requireTenant(): Promise<
     const jar = await cookies();
     const viewAs = jar.get("view_as_tenant")?.value;
     if (viewAs) {
-      return { tenantId: viewAs, isReadOnly: true, role: "superadmin" };
+      const editMode = jar.get("view_as_edit")?.value === "true";
+      return { tenantId: viewAs, isReadOnly: !editMode, role: "superadmin" };
     }
     // Superadmin sans view-as : accès à son propre tenant
     return { tenantId: user.tenantId, isReadOnly: false, role: "superadmin" };
