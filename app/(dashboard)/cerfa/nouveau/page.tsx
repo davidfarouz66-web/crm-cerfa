@@ -168,7 +168,7 @@ function NouveauCerfaForm() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Nature du don *</label>
-          <select name="natureDon" required defaultValue="nature"
+          <select name="natureDon" required defaultValue="numeraire"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
             <option value="numeraire">Numéraire</option>
             <option value="nature">En nature</option>
