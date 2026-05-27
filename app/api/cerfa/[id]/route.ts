@@ -41,11 +41,14 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const updated = await prisma.cerfa.update({
     where: { id },
     data: {
-      dateDon:      new Date(body.dateDon),
-      dateEmission: body.dateEmission ? new Date(body.dateEmission) : undefined,
-      montant:      parseFloat(body.montant),
-      modePaiement: body.modePaiement,
-      objetDon:     body.objetDon || null,
+      dateDon:       new Date(body.dateDon),
+      dateEmission:  body.dateEmission ? new Date(body.dateEmission) : undefined,
+      montant:       parseFloat(body.montant),
+      modePaiement:  body.modePaiement,
+      objetDon:      body.objetDon || null,
+      natureDon:     body.natureDon     || undefined,
+      formeDon:      body.formeDon      || undefined,
+      articleFiscal: body.articleFiscal || undefined,
     },
     include: { donateur: true },
   });
