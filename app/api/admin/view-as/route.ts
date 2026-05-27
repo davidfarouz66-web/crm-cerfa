@@ -15,6 +15,8 @@ export async function POST(req: Request) {
   const res = NextResponse.json({ ok: true });
   res.cookies.set("view_as_tenant", tenantId, { httpOnly: true, sameSite: "lax", maxAge: 3600 });
   res.cookies.set("view_as_nom", encodeURIComponent(nom || tenantId), { httpOnly: false, sameSite: "lax", maxAge: 3600 });
+  // Toujours en mode édition
+  res.cookies.set("view_as_edit", "true", { httpOnly: false, sameSite: "lax", maxAge: 3600 });
   return res;
 }
 
