@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, X, BarChart3, Settings, LogOut, Shield, UserCog } from "lucide-react";
+import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, X, BarChart3, Settings, LogOut, Shield } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
 const navItems = [
@@ -33,10 +33,6 @@ export default function MobileNav() {
           <Link href="/parametres" onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50">
             <Settings size={17} className="text-slate-400" /> Paramètres
-          </Link>
-          <Link href="/reglages" onClick={() => setOpen(false)}
-            className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50">
-            <UserCog size={17} className="text-slate-400" /> Réglages
           </Link>
           {role === "superadmin" && (
             <Link href="/admin" onClick={() => setOpen(false)}

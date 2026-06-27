@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Save, Building2, Upload, ImageIcon, Hash, ShieldCheck, AlertTriangle, Lock } from "lucide-react";
+import { Loader2, Save, Building2, Upload, ImageIcon, Hash, ShieldCheck, AlertTriangle, Lock, UserCog, CreditCard, Eye, EyeOff } from "lucide-react";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 
 interface Association {
   nom?: string;
@@ -51,7 +52,31 @@ const TYPES_ORGANISME = [
   "Autre",
 ];
 
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <button type="button" onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${checked ? "bg-blue-600" : "bg-slate-200"}`}>
+      <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} />
+    </button>
+  );
+}
+
+function SecretInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative">
+      <input type={show ? "text" : "password"} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        className="w-full px-4 py-3 pr-10 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono" />
+      <button type="button" onClick={() => setShow(v => !v)}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  );
+}
+
 export default function ParametresPage() {
+  const { data: session } = useSession();
   const [assoc, setAssoc] = useState<Association>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -63,13 +88,46 @@ export default function ParametresPage() {
   const logoRef = useRef<HTMLInputElement>(null);
   const sigRef = useRef<HTMLInputElement>(null);
 
+  // Compte
+  const [nom, setNom] = useState("");
+  const [emailCompte, setEmailCompte] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingCompte, setSavingCompte] = useState(false);
+  const [savedCompte, setSavedCompte] = useState("");
+  const [errorCompte, setErrorCompte] = useState("");
+
+  // Paiements
+  const [stripeEnabled, setStripeEnabled] = useState(false);
+  const [stripePublicKey, setStripePublicKey] = useState("");
+  const [stripeSecretKey, setStripeSecretKey] = useState("");
+  const [gcEnabled, setGcEnabled] = useState(false);
+  const [gcToken, setGcToken] = useState("");
+  const [savingPaiements, setSavingPaiements] = useState(false);
+  const [savedPaiements, setSavedPaiements] = useState("");
+
   useEffect(() => {
     fetch("/api/association").then((r) => r.json()).then((d) => {
       setAssoc(d);
       setEligible(!!d.organismeEligibleMecenat);
       setLoading(false);
     });
+    fetch("/api/reglages/paiements").then(r => r.json()).then(d => {
+      setStripeEnabled(d.stripe_enabled === "true");
+      setStripePublicKey(d.stripe_public_key || "");
+      setStripeSecretKey(d.stripe_secret_key || "");
+      setGcEnabled(d.gocardless_enabled === "true");
+      setGcToken(d.gocardless_access_token || "");
+    });
   }, []);
+
+  useEffect(() => {
+    if (session?.user) {
+      setNom((session.user as { name?: string }).name || "");
+      setEmailCompte(session.user.email || "");
+    }
+  }, [session]);
 
   async function handleUpload(file: File, type: "logo" | "signature") {
     const setter = type === "logo" ? setUploadingLogo : setUploadingSig;
@@ -122,6 +180,35 @@ export default function ParametresPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleSubmitCompte(e: React.FormEvent) {
+    e.preventDefault();
+    setErrorCompte(""); setSavedCompte("");
+    if (newPassword && newPassword !== confirmPassword) { setErrorCompte("Les mots de passe ne correspondent pas."); return; }
+    if (newPassword && newPassword.length < 8) { setErrorCompte("Minimum 8 caractères."); return; }
+    setSavingCompte(true);
+    const res = await fetch("/api/reglages", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nom, email: emailCompte, currentPassword: currentPassword || undefined, newPassword: newPassword || undefined }),
+    });
+    setSavingCompte(false);
+    const json = await res.json();
+    if (!res.ok) { setErrorCompte(json.error || "Erreur."); }
+    else { setSavedCompte("Compte mis à jour."); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); setTimeout(() => setSavedCompte(""), 3000); }
+  }
+
+  async function handleSubmitPaiements(e: React.FormEvent) {
+    e.preventDefault();
+    setSavingPaiements(true);
+    await fetch("/api/reglages/paiements", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ stripe_enabled: String(stripeEnabled), stripe_public_key: stripePublicKey, stripe_secret_key: stripeSecretKey, gocardless_enabled: String(gcEnabled), gocardless_access_token: gcToken }),
+    });
+    setSavingPaiements(false);
+    setSavedPaiements("Paiements enregistrés."); setTimeout(() => setSavedPaiements(""), 3000);
   }
 
   if (loading) {
@@ -389,6 +476,129 @@ export default function ParametresPage() {
           className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm">
           {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
           {saving ? "Enregistrement..." : "Enregistrer les modifications"}
+        </button>
+      </form>
+
+      {/* ── Compte ── */}
+      <div className="flex items-center gap-3 mt-8 mb-4">
+        <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
+          <UserCog size={20} className="text-violet-600" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-slate-800">Mon compte</h2>
+          <p className="text-slate-500 text-xs">Identifiants de connexion</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmitCompte} className="space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nom complet</label>
+            <input type="text" value={nom} onChange={e => setNom(e.target.value)} placeholder="Votre nom"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Adresse email</label>
+            <input type="email" value={emailCompte} onChange={e => setEmailCompte(e.target.value)} placeholder="votre@email.com"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+          <p className="text-sm font-semibold text-slate-700">Changer le mot de passe</p>
+          <p className="text-xs text-slate-400 -mt-2">Laissez vide pour ne pas modifier.</p>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Mot de passe actuel</label>
+            <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} placeholder="••••••••"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nouveau mot de passe</label>
+            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Confirmer</label>
+            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} placeholder="••••••••"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
+          </div>
+        </div>
+
+        {errorCompte && <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm"><AlertTriangle size={15} className="shrink-0" />{errorCompte}</div>}
+        {savedCompte && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm">✓ {savedCompte}</div>}
+
+        <button type="submit" disabled={savingCompte}
+          className="w-full bg-violet-600 text-white py-3 rounded-xl font-semibold hover:bg-violet-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm">
+          {savingCompte ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          {savingCompte ? "Enregistrement..." : "Enregistrer le compte"}
+        </button>
+      </form>
+
+      {/* ── Paiements ── */}
+      <div className="flex items-center gap-3 mt-8 mb-4">
+        <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+          <CreditCard size={20} className="text-emerald-600" />
+        </div>
+        <div>
+          <h2 className="text-base font-bold text-slate-800">Paiements en ligne</h2>
+          <p className="text-slate-500 text-xs">Activez pour recevoir des dons en ligne</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmitPaiements} className="space-y-4 pb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Stripe</p>
+              <p className="text-xs text-slate-400">Paiement par carte · ~1.5% de frais</p>
+            </div>
+            <Toggle checked={stripeEnabled} onChange={setStripeEnabled} />
+          </div>
+          {stripeEnabled && (
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Clé publique</label>
+                <input type="text" value={stripePublicKey} onChange={e => setStripePublicKey(e.target.value)} placeholder="pk_live_..."
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-mono" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Clé secrète</label>
+                <SecretInput value={stripeSecretKey} onChange={setStripeSecretKey} placeholder="sk_live_..." />
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
+                Nécessite un compte Stripe avec SIRET et RIB professionnel.
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">GoCardless</p>
+              <p className="text-xs text-slate-400">Virement SEPA · ~1% plafonné à 2€</p>
+            </div>
+            <Toggle checked={gcEnabled} onChange={setGcEnabled} />
+          </div>
+          {gcEnabled && (
+            <div className="space-y-3 pt-2 border-t border-slate-100">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Token d'accès</label>
+                <SecretInput value={gcToken} onChange={setGcToken} placeholder="live_..." />
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
+                Nécessite un compte GoCardless avec SIRET et RIB professionnel.
+              </div>
+            </div>
+          )}
+        </div>
+
+        {savedPaiements && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl text-sm">✓ {savedPaiements}</div>}
+
+        <button type="submit" disabled={savingPaiements}
+          className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-sm">
+          {savingPaiements ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+          {savingPaiements ? "Enregistrement..." : "Enregistrer les paiements"}
         </button>
       </form>
     </div>
