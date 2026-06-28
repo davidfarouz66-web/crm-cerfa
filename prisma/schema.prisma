@@ -107,33 +107,70 @@ model Cerfa {
 }
 
 model Gala {
-  id           String    @id @default(cuid())
-  tenantId     String
-  titre        String
-  description  String?
-  objectif     Float
-  dateEvenement DateTime
-  lieu         String?
-  langue       String    @default("fr")
-  couleurPrimaire String  @default("#1e3a8a")
-  couleurSecondaire String @default("#ffffff")
-  logoUrl      String?
-  actif        Boolean   @default(false)
-  totalCollecte Float     @default(0)
-  dons         DonGala[]
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                String    @id @default(cuid())
+  tenantId          String
+  titre             String
+  description       String?
+  objectif          Float
+  dateEvenement     DateTime
+  lieu              String?
+  langue            String    @default("fr")
+  couleurPrimaire   String    @default("#1e3a8a")
+  couleurSecondaire String    @default("#ffffff")
+  logoUrl           String?
+  actif             Boolean   @default(false)
+  totalCollecte     Float     @default(0)
+  promesseEnabled   Boolean   @default(false)
+  dons              DonGala[]
+  promesses         PromesseDon[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
 model DonGala {
-  id        String   @id @default(cuid())
-  gala      Gala     @relation(fields: [galaId], references: [id])
-  galaId    String
-  montant   Float
-  nomAffiche String?
-  anonyme   Boolean  @default(false)
-  message   String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  gala          Gala     @relation(fields: [galaId], references: [id])
+  galaId        String
+  montant       Float
+  nomAffiche    String?
+  anonyme       Boolean  @default(false)
+  message       String?
+  type          String   @default("particulier")
+  prenom        String?
+  nom           String?
+  raisonSociale String?
+  siret         String?
+  email         String?
+  adresse       String?
+  codePostal    String?
+  ville         String?
+  cerfaDemande  Boolean  @default(false)
+  stripePaymentId String?
+  createdAt     DateTime @default(now())
+}
+
+model PromesseDon {
+  id            String   @id @default(cuid())
+  gala          Gala     @relation(fields: [galaId], references: [id])
+  galaId        String
+  montant       Float
+  nomAffiche    String?
+  anonyme       Boolean  @default(false)
+  type          String   @default("particulier")
+  prenom        String?
+  nom           String?
+  raisonSociale String?
+  siret         String?
+  telephone     String?
+  email         String?
+  adresse       String?
+  codePostal    String?
+  ville         String?
+  cerfaDemande  Boolean  @default(false)
+  dateRappel    DateTime
+  rappelEnvoye  Boolean  @default(false)
+  honore        Boolean  @default(false)
+  createdAt     DateTime @default(now())
 }
 
 model Settings {

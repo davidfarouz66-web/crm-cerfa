@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       langue: body.langue || "fr",
       couleurPrimaire: body.couleurPrimaire || "#1e3a8a",
       couleurSecondaire: body.couleurSecondaire || "#ffffff",
+      promesseEnabled: body.promesseEnabled || false,
     },
   });
   return NextResponse.json(gala);

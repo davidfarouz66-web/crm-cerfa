@@ -1,17 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Plus, Monitor, Smartphone, Tv, CalendarDays } from "lucide-react";
+import { Loader2, Plus, Monitor, Smartphone, Tv, CalendarDays, QrCode, Link2, Users } from "lucide-react";
 
 interface Gala {
-  id: string;
-  titre: string;
-  objectif: number;
-  totalCollecte: number;
-  dateEvenement: string;
-  lieu: string | null;
-  actif: boolean;
-  _count: { dons: number };
+  id: string; titre: string; objectif: number; totalCollecte: number;
+  dateEvenement: string; lieu: string | null; actif: boolean;
+  promesseEnabled: boolean; _count: { dons: number };
 }
 
 export default function GalaPage() {
@@ -22,7 +17,9 @@ export default function GalaPage() {
   const [objectif, setObjectif] = useState("");
   const [date, setDate] = useState("");
   const [lieu, setLieu] = useState("");
+  const [promesseEnabled, setPromesseEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/gala").then(r => r.json()).then(d => { setGalas(d); setLoading(false); });
@@ -34,13 +31,19 @@ export default function GalaPage() {
     const res = await fetch("/api/gala", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ titre, objectif, dateEvenement: date, lieu }),
+      body: JSON.stringify({ titre, objectif, dateEvenement: date, lieu, promesseEnabled }),
     });
     const gala = await res.json();
     setGalas(prev => [{ ...gala, _count: { dons: 0 } }, ...prev]);
-    setSaving(false);
-    setShowForm(false);
-    setTitre(""); setObjectif(""); setDate(""); setLieu("");
+    setSaving(false); setShowForm(false);
+    setTitre(""); setObjectif(""); setDate(""); setLieu(""); setPromesseEnabled(false);
+  }
+
+  function copyLink(galaId: string) {
+    const url = `${window.location.origin}/gala/${galaId}/don`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(galaId);
+    setTimeout(() => setCopiedId(null), 2000);
   }
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
@@ -79,6 +82,17 @@ export default function GalaPage() {
           </div>
           <input value={lieu} onChange={e => setLieu(e.target.value)} placeholder="Lieu (optionnel)"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm" />
+
+          <div className="border border-slate-100 rounded-xl p-4 space-y-1">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={promesseEnabled} onChange={e => setPromesseEnabled(e.target.checked)} className="w-4 h-4" />
+              <div>
+                <p className="text-sm font-semibold text-slate-700">Activer les promesses de don</p>
+                <p className="text-xs text-slate-400 mt-0.5">Permet aux donateurs de s'engager à faire un don sans payer immédiatement. L'association les recontacte à la date choisie pour finaliser le paiement.</p>
+              </div>
+            </label>
+          </div>
+
           <div className="flex gap-3">
             <button type="button" onClick={() => setShowForm(false)}
               className="flex-1 px-4 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50">
@@ -101,6 +115,8 @@ export default function GalaPage() {
         <div className="space-y-4">
           {galas.map(g => {
             const pct = Math.min(100, Math.round((g.totalCollecte / g.objectif) * 100));
+            const donUrl = `${origin}/gala/${g.id}/don`;
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(donUrl)}`;
             return (
               <div key={g.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
                 <div className="flex items-start justify-between mb-3">
@@ -109,7 +125,7 @@ export default function GalaPage() {
                     <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
                       <span className="flex items-center gap-1"><CalendarDays size={12} />{new Date(g.dateEvenement).toLocaleDateString("fr-FR")}</span>
                       {g.lieu && <span>{g.lieu}</span>}
-                      <span>{g._count.dons} dons</span>
+                      <span className="flex items-center gap-1"><Users size={12} />{g._count.dons} dons</span>
                     </div>
                   </div>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${g.actif ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
@@ -127,20 +143,31 @@ export default function GalaPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-3 mb-3">
                   <a href={`/gala/${g.id}/ecran`} target="_blank" rel="noreferrer"
                     className="flex items-center justify-center gap-2 bg-slate-800 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-slate-700 transition-colors">
                     <Monitor size={15} /> Écran projecteur
                   </a>
                   <a href={`/gala/${g.id}/saisie`} target="_blank" rel="noreferrer"
                     className="flex items-center justify-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-purple-700 transition-colors">
-                    <Smartphone size={15} /> Saisie dons
+                    <Smartphone size={15} /> Saisie staff
                   </a>
                 </div>
 
-                <div className="mt-3 p-3 bg-slate-50 rounded-xl">
-                  <p className="text-xs text-slate-500 mb-1">Lien saisie pour le staff :</p>
-                  <p className="text-xs font-mono text-slate-700 break-all">{origin}/gala/{g.id}/saisie</p>
+                {/* Lien donateur + QR code */}
+                <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-4">
+                  <img src={qrUrl} alt="QR code don" className="w-20 h-20 rounded-lg shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
+                      <QrCode size={12} /> Lien donateurs
+                    </p>
+                    <p className="text-xs font-mono text-slate-500 truncate">{donUrl}</p>
+                    <button onClick={() => copyLink(g.id)}
+                      className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700">
+                      <Link2 size={12} />
+                      {copiedId === g.id ? "Copié !" : "Copier le lien"}
+                    </button>
+                  </div>
                 </div>
               </div>
             );
