@@ -24,14 +24,20 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     where: { id, tenantId: t.tenantId },
     data: {
       titre: body.titre,
-      description: body.description,
+      description: body.description || null,
+      videoUrl: body.videoUrl || null,
       objectif: body.objectif ? parseFloat(body.objectif) : undefined,
       dateEvenement: body.dateEvenement ? new Date(body.dateEvenement) : undefined,
-      lieu: body.lieu,
+      lieu: body.lieu || null,
       langue: body.langue,
       couleurPrimaire: body.couleurPrimaire,
       couleurSecondaire: body.couleurSecondaire,
       actif: body.actif !== undefined ? body.actif : undefined,
+      promesseEnabled: body.promesseEnabled !== undefined ? body.promesseEnabled : undefined,
+      mensualiteEnabled: body.mensualiteEnabled !== undefined ? body.mensualiteEnabled : undefined,
+      mensualiteOptions: body.mensualiteOptions || undefined,
+      mensualiteDebutMode: body.mensualiteDebutMode || undefined,
+      mensualiteDebutDate: body.mensualiteDebutDate ? new Date(body.mensualiteDebutDate) : null,
     },
   });
   return NextResponse.json(gala);

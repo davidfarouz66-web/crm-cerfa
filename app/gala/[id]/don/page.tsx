@@ -2,12 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, CreditCard, Building2, User, FileText, CalendarClock, Eye, EyeOff } from "lucide-react";
+import { Loader2, CreditCard, Building2, User, FileText, CalendarClock } from "lucide-react";
 
 interface Gala {
-  id: string; titre: string; objectif: number; totalCollecte: number;
-  couleurPrimaire: string; couleurSecondaire: string; promesseEnabled: boolean;
+  id: string; titre: string; description: string | null; videoUrl: string | null;
+  objectif: number; totalCollecte: number;
+  couleurPrimaire: string; couleurSecondaire: string;
+  promesseEnabled: boolean; mensualiteEnabled: boolean;
+  mensualiteOptions: string; mensualiteDebutMode: string;
+  mensualiteDebutDate: string | null;
   lieu: string | null; logoUrl: string | null;
+}
+
+function getVideoEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  return null;
 }
 
 const MONTANTS = [50, 100, 200, 500, 1000, 5000];
@@ -17,6 +30,7 @@ export default function DonPage() {
   const [gala, setGala] = useState<Gala | null>(null);
   const [montant, setMontant] = useState("");
   const [montantLibre, setMontantLibre] = useState("");
+  const [nbFois, setNbFois] = useState<number | null>(null);
   const [mode, setMode] = useState<"payer" | "promesse">("payer");
   const [typePersonne, setTypePersonne] = useState<"particulier" | "societe">("particulier");
   const [prenom, setPrenom] = useState("");
@@ -44,6 +58,8 @@ export default function DonPage() {
 
   const montantFinal = montant || montantLibre;
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+  const mensualiteOpts = gala?.mensualiteOptions?.split(",").map(Number).filter(Boolean) || [];
+  const mensualiteMontant = nbFois && montantFinal ? Math.round((parseFloat(montantFinal) / nbFois) * 100) / 100 : null;
 
   async function handlePayer(e: React.FormEvent) {
     e.preventDefault();
@@ -58,6 +74,9 @@ export default function DonPage() {
       raisonSociale: typePersonne === "societe" ? raisonSociale : "",
       siret: typePersonne === "societe" ? siret : "",
       email, adresse, codePostal, ville, cerfaDemande,
+      nbFois: nbFois || 1,
+      mensualiteDebutMode: gala?.mensualiteDebutMode,
+      mensualiteDebutDate: gala?.mensualiteDebutDate,
     };
 
     const res = await fetch(`/api/gala/${id}/checkout`, {
@@ -138,6 +157,20 @@ export default function DonPage() {
           </div>
         </div>
 
+        {/* Vidéo */}
+        {gala.videoUrl && getVideoEmbedUrl(gala.videoUrl) && (
+          <div className="rounded-2xl overflow-hidden shadow-sm" style={{ aspectRatio: "16/9" }}>
+            <iframe src={getVideoEmbedUrl(gala.videoUrl)!} className="w-full h-full" allowFullScreen />
+          </div>
+        )}
+
+        {/* Description */}
+        {gala.description && (
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{gala.description}</p>
+          </div>
+        )}
+
         {/* Montant */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <p className="text-sm font-semibold text-slate-600 mb-3">Montant du don</p>
@@ -154,6 +187,37 @@ export default function DonPage() {
           <input type="number" value={montantLibre} onChange={e => { setMontantLibre(e.target.value); setMontant(""); }}
             placeholder="Autre montant (€)" min="1"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+          {/* Mensualités */}
+          {gala.mensualiteEnabled && mensualiteOpts.length > 0 && montantFinal && (
+            <div className="pt-2 border-t border-slate-100">
+              <p className="text-xs font-semibold text-slate-500 mb-2">Payer en plusieurs fois</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button type="button" onClick={() => setNbFois(null)}
+                  className="py-2.5 rounded-xl text-xs font-semibold transition-all"
+                  style={nbFois === null ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
+                  1 fois — {fmt(parseFloat(montantFinal))}
+                </button>
+                {mensualiteOpts.map(n => (
+                  <button key={n} type="button" onClick={() => setNbFois(n)}
+                    className="py-2.5 rounded-xl text-xs font-semibold transition-all"
+                    style={nbFois === n ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
+                    {n}x — {fmt(parseFloat(montantFinal) / n)}/mois
+                  </button>
+                ))}
+              </div>
+              {nbFois && gala.mensualiteDebutMode === "date" && gala.mensualiteDebutDate && (
+                <p className="text-xs text-slate-400 mt-2 text-center">
+                  Premier prélèvement le {new Date(gala.mensualiteDebutDate).toLocaleDateString("fr-FR")}
+                </p>
+              )}
+              {nbFois && gala.mensualiteDebutMode === "immediat" && (
+                <p className="text-xs text-slate-400 mt-2 text-center">
+                  1er prélèvement aujourd'hui, puis le 1er de chaque mois
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Mode : payer maintenant ou promesse */}

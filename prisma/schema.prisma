@@ -107,24 +107,29 @@ model Cerfa {
 }
 
 model Gala {
-  id                String    @id @default(cuid())
-  tenantId          String
-  titre             String
-  description       String?
-  objectif          Float
-  dateEvenement     DateTime
-  lieu              String?
-  langue            String    @default("fr")
-  couleurPrimaire   String    @default("#1e3a8a")
-  couleurSecondaire String    @default("#ffffff")
-  logoUrl           String?
-  actif             Boolean   @default(false)
-  totalCollecte     Float     @default(0)
-  promesseEnabled   Boolean   @default(false)
-  dons              DonGala[]
-  promesses         PromesseDon[]
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  tenantId              String
+  titre                 String
+  description           String?
+  videoUrl              String?
+  objectif              Float
+  dateEvenement         DateTime
+  lieu                  String?
+  langue                String    @default("fr")
+  couleurPrimaire       String    @default("#1e3a8a")
+  couleurSecondaire     String    @default("#ffffff")
+  logoUrl               String?
+  actif                 Boolean   @default(false)
+  totalCollecte         Float     @default(0)
+  promesseEnabled       Boolean   @default(false)
+  mensualiteEnabled     Boolean   @default(false)
+  mensualiteOptions     String    @default("2,3,6,12")
+  mensualiteDebutMode   String    @default("immediat")
+  mensualiteDebutDate   DateTime?
+  dons                  DonGala[]
+  promesses             PromesseDon[]
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 }
 
 model DonGala {
