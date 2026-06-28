@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard, Users, FilePlus, FileText,
-  BarChart3, Settings, LogOut, Heart, Upload, Shield, Building2,
+  BarChart3, Settings, LogOut, Heart, Upload, Shield, Building2, Tv,
 } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
@@ -16,6 +16,7 @@ const navItems = [
   { href: "/cerfa", label: "Liste CERFA", icon: FileText },
   { href: "/recapitulatif", label: "Récapitulatif", icon: BarChart3 },
   { href: "/import", label: "Import CSV", icon: Upload },
+  { href: "/gala", label: "Galas", icon: Tv },
   { href: "/parametres", label: "Paramètres", icon: Settings },
   { href: "/reglages", label: "Réglages", icon: Shield },
 ];

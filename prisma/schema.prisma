@@ -106,6 +106,36 @@ model Cerfa {
   updatedAt      DateTime @updatedAt
 }
 
+model Gala {
+  id           String    @id @default(cuid())
+  tenantId     String
+  titre        String
+  description  String?
+  objectif     Float
+  dateEvenement DateTime
+  lieu         String?
+  langue       String    @default("fr")
+  couleurPrimaire String  @default("#1e3a8a")
+  couleurSecondaire String @default("#ffffff")
+  logoUrl      String?
+  actif        Boolean   @default(false)
+  totalCollecte Float     @default(0)
+  dons         DonGala[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model DonGala {
+  id        String   @id @default(cuid())
+  gala      Gala     @relation(fields: [galaId], references: [id])
+  galaId    String
+  montant   Float
+  nomAffiche String?
+  anonyme   Boolean  @default(false)
+  message   String?
+  createdAt DateTime @default(now())
+}
+
 model Settings {
   id        Int      @id @default(autoincrement())
   key       String   @unique
