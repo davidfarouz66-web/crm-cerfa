@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { Pool } from "pg";
+import { getDatabaseUrl, isLocalDatabaseUrl } from "./database-url";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -20,10 +21,10 @@ export const authOptions: NextAuthOptions = {
         try {
           if (!credentials?.email || !credentials?.password) return null;
 
-          const isLocal = (process.env.DATABASE_URL ?? "").includes("localhost") || (process.env.DATABASE_URL ?? "").includes("127.0.0.1");
+          const connectionString = getDatabaseUrl();
           const pool = new Pool({
-            connectionString: process.env.DATABASE_URL!,
-            ssl: isLocal ? false : { rejectUnauthorized: false },
+            connectionString,
+            ssl: isLocalDatabaseUrl(connectionString) ? false : { rejectUnauthorized: false },
           });
 
           const result = await pool.query(
