@@ -4,9 +4,15 @@ import { prisma } from "@/lib/db";
 import crypto from "crypto";
 import { Resend } from "resend";
 
-const FROM = process.env.BREVO_FROM_NAME
-  ? `${process.env.BREVO_FROM_NAME} <${process.env.BREVO_FROM_EMAIL}>`
-  : process.env.BREVO_FROM_EMAIL!;
+const FROM = process.env.RESEND_FROM_EMAIL || "Trouma Pro <noreply@trouma-pro.fr>";
+
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY est requis pour envoyer un email de réinitialisation.");
+  }
+  return new Resend(apiKey);
+}
 
 export async function POST(req: Request) {
   const { email } = await req.json();
@@ -27,9 +33,7 @@ export async function POST(req: Request) {
 
   const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
-
-  await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: FROM,
     to: email,
     subject: "Réinitialisation de votre mot de passe — Trouma-Pro",
@@ -59,6 +63,11 @@ export async function POST(req: Request) {
       </div>
     `,
   });
+
+  if (error) {
+    console.error("[forgot-password resend]", error);
+    return NextResponse.json({ error: "Erreur lors de l'envoi de l'email de réinitialisation." }, { status: 500 });
+  }
 
   return NextResponse.json({ ok: true });
 }
