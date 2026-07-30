@@ -7,7 +7,13 @@ import { generateCerfaPDF } from "@/lib/pdf";
 import { generateMecenaPDF } from "@/lib/pdf-mecena";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResend() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY est requis pour envoyer un reçu fiscal par email.");
+  }
+  return new Resend(apiKey);
+}
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -52,7 +58,7 @@ export async function POST(req: Request) {
 
   const montantStr = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cerfa.montant);
 
-  const { error } = await resend.emails.send({
+  const { error } = await getResend().emails.send({
     from: "Trouma Pro <noreply@trouma-pro.fr>",
     to: email,
     subject: `Votre reçu fiscal n° ${cerfa.numeroCerfa} — ${association.nom}`,
