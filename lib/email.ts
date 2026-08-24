@@ -2,12 +2,26 @@ import { Resend } from "resend";
 import { downloadPDF } from "./storage";
 
 function getResend() {
-  return new Resend(process.env.RESEND_API_KEY);
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error("RESEND_API_KEY est requis pour envoyer un reçu fiscal par email.");
+  }
+  return new Resend(apiKey);
 }
 
-const FROM = process.env.BREVO_FROM_NAME
-  ? `${process.env.BREVO_FROM_NAME} <${process.env.BREVO_FROM_EMAIL}>`
-  : process.env.BREVO_FROM_EMAIL!;
+function getFromEmail() {
+  const explicitFrom = process.env.RESEND_FROM_EMAIL;
+  if (explicitFrom) return explicitFrom;
+
+  const brevoEmail = process.env.BREVO_FROM_EMAIL;
+  if (!brevoEmail) {
+    throw new Error("RESEND_FROM_EMAIL ou BREVO_FROM_EMAIL est requis pour envoyer un reçu fiscal par email.");
+  }
+
+  return process.env.BREVO_FROM_NAME
+    ? `${process.env.BREVO_FROM_NAME} <${brevoEmail}>`
+    : brevoEmail;
+}
 
 export async function sendCerfaEmail({
   to,
@@ -35,8 +49,8 @@ export async function sendCerfaEmail({
   const pdfBytes = await downloadPDF(storageFilename);
   const fileName = `CERFA-${numeroCerfa.replace("/", "-")}.pdf`;
 
-  await getResend().emails.send({
-    from: FROM,
+  const { error } = await getResend().emails.send({
+    from: getFromEmail(),
     to: `${toName} <${to}>`,
     subject: `Votre reçu fiscal ${numeroCerfa} — ${associationNom}`,
     html: `
@@ -73,4 +87,9 @@ export async function sendCerfaEmail({
       content: Buffer.from(pdfBytes).toString("base64"),
     }],
   });
+
+  if (error) {
+    console.error("[sendCerfaEmail resend error]", error);
+    throw new Error(error.message || "Erreur lors de l'envoi de l'email CERFA.");
+  }
 }

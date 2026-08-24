@@ -104,6 +104,7 @@ model Cerfa {
   tenantId       String   @default("default")
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  galaDon        DonGala?
 }
 
 model Gala {
@@ -150,7 +151,11 @@ model DonGala {
   codePostal    String?
   ville         String?
   cerfaDemande  Boolean  @default(false)
-  stripePaymentId String?
+  stripePaymentId String? @unique
+  cerfaId       String?  @unique
+  cerfa         Cerfa?   @relation(fields: [cerfaId], references: [id], onDelete: SetNull)
+  cerfaSentAt   DateTime?
+  cerfaError    String?
   createdAt     DateTime @default(now())
 }
 

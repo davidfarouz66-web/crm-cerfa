@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import Stripe from "stripe";
+import { prisma } from "@/lib/db";
+import { recordPaidGalaDonation } from "@/lib/gala-donations";
 
 export const dynamic = "force-dynamic";
 
@@ -32,30 +33,24 @@ export async function POST(req: NextRequest) {
 
     if (meta.galaId) {
       const montant = parseFloat(meta.montant || "0");
-      await prisma.donGala.create({
-        data: {
-          galaId: meta.galaId,
-          montant,
-          nomAffiche: meta.nomAffiche || null,
-          anonyme: meta.anonyme === "true",
-          message: meta.message || null,
-          type: meta.type || "particulier",
-          prenom: meta.prenom || null,
-          nom: meta.nom || null,
-          raisonSociale: meta.raisonSociale || null,
-          siret: meta.siret || null,
-          email: meta.email || null,
-          adresse: meta.adresse || null,
-          codePostal: meta.codePostal || null,
-          ville: meta.ville || null,
-          cerfaDemande: meta.cerfaDemande === "true",
-          stripePaymentId: session.payment_intent as string || null,
-        },
-      });
-
-      await prisma.gala.update({
-        where: { id: meta.galaId },
-        data: { totalCollecte: { increment: montant } },
+      await recordPaidGalaDonation({
+        galaId: meta.galaId,
+        montant,
+        nomAffiche: meta.nomAffiche || null,
+        anonyme: meta.anonyme === "true",
+        message: meta.message || null,
+        type: meta.type || "particulier",
+        prenom: meta.prenom || null,
+        nom: meta.nom || null,
+        raisonSociale: meta.raisonSociale || null,
+        siret: meta.siret || null,
+        email: meta.email || null,
+        adresse: meta.adresse || null,
+        codePostal: meta.codePostal || null,
+        ville: meta.ville || null,
+        cerfaDemande: meta.cerfaDemande === "true",
+        modePaiement: "stripe",
+        stripePaymentId: typeof session.payment_intent === "string" ? session.payment_intent : session.id,
       });
     }
   }

@@ -15,6 +15,20 @@ function getResend() {
   return new Resend(apiKey);
 }
 
+function getFromEmail() {
+  const explicitFrom = process.env.RESEND_FROM_EMAIL;
+  if (explicitFrom) return explicitFrom;
+
+  const brevoEmail = process.env.BREVO_FROM_EMAIL;
+  if (!brevoEmail) {
+    throw new Error("RESEND_FROM_EMAIL ou BREVO_FROM_EMAIL est requis pour envoyer un reçu fiscal par email.");
+  }
+
+  return process.env.BREVO_FROM_NAME
+    ? `${process.env.BREVO_FROM_NAME} <${brevoEmail}>`
+    : brevoEmail;
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
@@ -59,7 +73,7 @@ export async function POST(req: Request) {
   const montantStr = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cerfa.montant);
 
   const { error } = await getResend().emails.send({
-    from: "Trouma Pro <noreply@trouma-pro.fr>",
+    from: getFromEmail(),
     to: email,
     subject: `Votre reçu fiscal n° ${cerfa.numeroCerfa} — ${association.nom}`,
     html: `
