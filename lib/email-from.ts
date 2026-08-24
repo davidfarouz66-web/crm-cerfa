@@ -1,4 +1,4 @@
-const DEFAULT_FROM = "Trouma Pro <recu@trouma-pro.fr>";
+const DEFAULT_FROM = "Trouma Pro <contact@trouma-pro.fr>";
 const PUBLIC_EMAIL_DOMAINS = [
   "gmail.com",
   "googlemail.com",
