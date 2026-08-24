@@ -1,10 +1,9 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getSenderEmail } from "@/lib/email-from";
 import crypto from "crypto";
 import { Resend } from "resend";
-
-const FROM = process.env.RESEND_FROM_EMAIL || "Trouma Pro <noreply@trouma-pro.fr>";
 
 function getResend() {
   const apiKey = process.env.RESEND_API_KEY;
@@ -35,7 +34,7 @@ export async function POST(req: Request) {
     const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
     const { error } = await getResend().emails.send({
-      from: FROM,
+      from: getSenderEmail(),
       to: email,
       subject: "Réinitialisation de votre mot de passe — Trouma-Pro",
       html: `

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getSenderEmail } from "@/lib/email-from";
 import { generateCerfaPDF } from "@/lib/pdf";
 import { generateMecenaPDF } from "@/lib/pdf-mecena";
 import { Resend } from "resend";
@@ -13,20 +14,6 @@ function getResend() {
     throw new Error("RESEND_API_KEY est requis pour envoyer un reçu fiscal par email.");
   }
   return new Resend(apiKey);
-}
-
-function getFromEmail() {
-  const explicitFrom = process.env.RESEND_FROM_EMAIL;
-  if (explicitFrom) return explicitFrom;
-
-  const brevoEmail = process.env.BREVO_FROM_EMAIL;
-  if (!brevoEmail) {
-    throw new Error("RESEND_FROM_EMAIL ou BREVO_FROM_EMAIL est requis pour envoyer un reçu fiscal par email.");
-  }
-
-  return process.env.BREVO_FROM_NAME
-    ? `${process.env.BREVO_FROM_NAME} <${brevoEmail}>`
-    : brevoEmail;
 }
 
 export async function POST(req: Request) {
@@ -73,7 +60,7 @@ export async function POST(req: Request) {
   const montantStr = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cerfa.montant);
 
   const { error } = await getResend().emails.send({
-    from: getFromEmail(),
+    from: getSenderEmail(),
     to: email,
     subject: `Votre reçu fiscal n° ${cerfa.numeroCerfa} — ${association.nom}`,
     html: `
