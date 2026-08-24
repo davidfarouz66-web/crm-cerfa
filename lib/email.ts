@@ -1,14 +1,5 @@
-import { Resend } from "resend";
-import { getSenderEmail } from "./email-from";
+import { sendMail } from "./mailer";
 import { downloadPDF } from "./storage";
-
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY est requis pour envoyer un reçu fiscal par email.");
-  }
-  return new Resend(apiKey);
-}
 
 export async function sendCerfaEmail({
   to,
@@ -36,8 +27,7 @@ export async function sendCerfaEmail({
   const pdfBytes = await downloadPDF(storageFilename);
   const fileName = `CERFA-${numeroCerfa.replace("/", "-")}.pdf`;
 
-  const { error } = await getResend().emails.send({
-    from: getSenderEmail(),
+  await sendMail({
     to: `${toName} <${to}>`,
     subject: `Votre reçu fiscal ${numeroCerfa} — ${associationNom}`,
     html: `
@@ -71,12 +61,7 @@ export async function sendCerfaEmail({
     `,
     attachments: [{
       filename: fileName,
-      content: Buffer.from(pdfBytes).toString("base64"),
+      content: Buffer.from(pdfBytes),
     }],
   });
-
-  if (error) {
-    console.error("[sendCerfaEmail resend error]", error);
-    throw new Error(error.message || "Erreur lors de l'envoi de l'email CERFA.");
-  }
 }

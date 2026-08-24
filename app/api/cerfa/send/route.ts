@@ -3,18 +3,9 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { getSenderEmail } from "@/lib/email-from";
+import { sendMail } from "@/lib/mailer";
 import { generateCerfaPDF } from "@/lib/pdf";
 import { generateMecenaPDF } from "@/lib/pdf-mecena";
-import { Resend } from "resend";
-
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY est requis pour envoyer un reçu fiscal par email.");
-  }
-  return new Resend(apiKey);
-}
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
@@ -59,11 +50,11 @@ export async function POST(req: Request) {
 
   const montantStr = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cerfa.montant);
 
-  const { error } = await getResend().emails.send({
-    from: getSenderEmail(),
-    to: email,
-    subject: `Votre reçu fiscal n° ${cerfa.numeroCerfa} — ${association.nom}`,
-    html: `
+  try {
+    await sendMail({
+      to: email,
+      subject: `Votre reçu fiscal n° ${cerfa.numeroCerfa} — ${association.nom}`,
+      html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
         <div style="background: #1e3a8a; padding: 24px 32px; border-radius: 12px 12px 0 0;">
           <h1 style="color: white; margin: 0; font-size: 20px;">Trouma Pro</h1>
@@ -92,16 +83,15 @@ export async function POST(req: Request) {
         </div>
       </div>
     `,
-    attachments: [
-      {
-        filename: `CERFA-${cerfa.numeroCerfa.replace("/", "-")}.pdf`,
-        content: Buffer.from(pdfBytes),
-      },
-    ],
-  });
-
-  if (error) {
-    console.error("[resend error]", error);
+      attachments: [
+        {
+          filename: `CERFA-${cerfa.numeroCerfa.replace("/", "-")}.pdf`,
+          content: Buffer.from(pdfBytes),
+        },
+      ],
+    });
+  } catch (error) {
+    console.error("[cerfa send email error]", error);
     return NextResponse.json({ error: "Erreur lors de l'envoi de l'email." }, { status: 500 });
   }
 

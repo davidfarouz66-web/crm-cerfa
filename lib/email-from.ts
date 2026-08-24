@@ -29,12 +29,13 @@ function isPublicEmailSender(from: string) {
 }
 
 export function getSenderEmail() {
-  const configuredFrom = process.env.RESEND_FROM_EMAIL || process.env.BREVO_FROM_EMAIL;
+  const configuredFrom = process.env.SMTP_FROM_EMAIL || process.env.RESEND_FROM_EMAIL || process.env.BREVO_FROM_EMAIL;
   if (!configuredFrom || isPublicEmailSender(configuredFrom)) {
     return DEFAULT_FROM;
   }
 
-  return process.env.BREVO_FROM_NAME && configuredFrom === process.env.BREVO_FROM_EMAIL
-    ? `${process.env.BREVO_FROM_NAME} <${configuredFrom}>`
+  const configuredName = process.env.SMTP_FROM_NAME || process.env.BREVO_FROM_NAME;
+  return configuredName && (configuredFrom === process.env.SMTP_FROM_EMAIL || configuredFrom === process.env.BREVO_FROM_EMAIL)
+    ? `${configuredName} <${configuredFrom}>`
     : configuredFrom;
 }

@@ -1,17 +1,8 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getSenderEmail } from "@/lib/email-from";
+import { sendMail } from "@/lib/mailer";
 import crypto from "crypto";
-import { Resend } from "resend";
-
-function getResend() {
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    throw new Error("RESEND_API_KEY est requis pour envoyer un email de réinitialisation.");
-  }
-  return new Resend(apiKey);
-}
 
 export async function POST(req: Request) {
   try {
@@ -33,8 +24,7 @@ export async function POST(req: Request) {
 
     const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
-    const { error } = await getResend().emails.send({
-      from: getSenderEmail(),
+    await sendMail({
       to: email,
       subject: "Réinitialisation de votre mot de passe — Trouma-Pro",
       html: `
@@ -63,14 +53,6 @@ export async function POST(req: Request) {
         </div>
       `,
     });
-
-    if (error) {
-      console.error("[forgot-password resend]", error);
-      return NextResponse.json({
-        error: "Erreur lors de l'envoi de l'email de réinitialisation.",
-        detail: error.message,
-      }, { status: 500 });
-    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {
