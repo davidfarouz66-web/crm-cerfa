@@ -18,6 +18,10 @@ function hasSmtpConfig() {
   return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);
 }
 
+function hasBrevoSmtpConfig() {
+  return !!(process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS);
+}
+
 function getSmtpPort() {
   return Number(process.env.SMTP_PORT || 465);
 }
@@ -36,6 +40,26 @@ async function sendWithSmtp(input: SendMailInput) {
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASSWORD,
+    },
+  });
+
+  await transporter.sendMail({
+    from: getSenderEmail(),
+    to: input.to,
+    subject: input.subject,
+    html: input.html,
+    attachments: input.attachments,
+  });
+}
+
+async function sendWithBrevoSmtp(input: SendMailInput) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.BREVO_SMTP_HOST || "smtp-relay.brevo.com",
+    port: Number(process.env.BREVO_SMTP_PORT || 587),
+    secure: process.env.BREVO_SMTP_SECURE === "true",
+    auth: {
+      user: process.env.BREVO_SMTP_USER,
+      pass: process.env.BREVO_SMTP_PASS,
     },
   });
 
@@ -76,6 +100,11 @@ async function sendWithResend(input: SendMailInput) {
 export async function sendMail(input: SendMailInput) {
   if (hasSmtpConfig()) {
     await sendWithSmtp(input);
+    return;
+  }
+
+  if (hasBrevoSmtpConfig()) {
+    await sendWithBrevoSmtp(input);
     return;
   }
 
