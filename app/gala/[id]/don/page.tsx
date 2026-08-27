@@ -153,7 +153,7 @@ export default function DonPage() {
               {gala.lieu && <p className="text-slate-400 text-sm">{gala.lieu}</p>}
             </div>
           </div>
-          <div className="flex justify-between text-sm mb-2">
+          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm mb-2">
             <span className="font-bold text-slate-800">{fmt(gala.totalCollecte)}</span>
             <span className="text-slate-400">{pct}% de {fmt(gala.objectif)}</span>
           </div>
@@ -182,7 +182,7 @@ export default function DonPage() {
         {/* Montant */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <p className="text-sm font-semibold text-slate-600 mb-3">Montant du don</p>
-          <div className="grid grid-cols-3 gap-2 mb-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
             {MONTANTS.map(m => (
               <button key={m} type="button"
                 onClick={() => { setMontant(String(m)); setMontantLibre(""); }}
@@ -200,7 +200,7 @@ export default function DonPage() {
           {gala.mensualiteEnabled && mensualiteOpts.length > 0 && montantFinal && (
             <div className="pt-2 border-t border-slate-100">
               <p className="text-xs font-semibold text-slate-500 mb-2">Payer en plusieurs fois</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button" onClick={() => setNbFois(null)}
                   className="py-2.5 rounded-xl text-xs font-semibold transition-all"
                   style={nbFois === null ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
@@ -232,7 +232,7 @@ export default function DonPage() {
         {gala.promesseEnabled && (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
             <p className="text-sm font-semibold text-slate-600 mb-3">Je souhaite…</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button type="button" onClick={() => setMode("payer")}
                 className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
                 style={mode === "payer" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
@@ -257,7 +257,7 @@ export default function DonPage() {
           {/* Infos personnelles */}
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
             <p className="text-sm font-semibold text-slate-600">Vos informations</p>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button type="button" onClick={() => setTypePersonne("particulier")}
                 className="py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
                 style={typePersonne === "particulier" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
@@ -271,7 +271,7 @@ export default function DonPage() {
             </div>
 
             {typePersonne === "particulier" ? (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input required value={prenom} onChange={e => setPrenom(e.target.value)} placeholder="Prénom *"
                   className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <input required value={nom} onChange={e => setNom(e.target.value)} placeholder="Nom *"
@@ -283,7 +283,7 @@ export default function DonPage() {
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <input value={siret} onChange={e => setSiret(e.target.value)} placeholder="SIRET (optionnel)"
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input required value={prenomContact} onChange={e => setPrenomContact(e.target.value)} placeholder="Prénom contact *"
                     className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   <input required value={nomContact} onChange={e => setNomContact(e.target.value)} placeholder="Nom contact *"
@@ -319,9 +319,9 @@ export default function DonPage() {
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={cerfaDemande} onChange={e => setCerfaDemande(e.target.checked)} className="w-4 h-4" />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 <FileText size={16} className="text-emerald-600" />
-                <span className="text-sm font-semibold text-slate-700">Je souhaite un reçu fiscal (CERFA)</span>
+                <span className="text-sm font-semibold text-slate-700 leading-snug">Je souhaite un reçu fiscal (CERFA)</span>
               </div>
             </label>
             {cerfaDemande && (
@@ -330,7 +330,7 @@ export default function DonPage() {
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                 <input required value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Adresse *"
                   className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input required value={codePostal} onChange={e => setCodePostal(e.target.value)} placeholder="Code postal *"
                     className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   <input required value={ville} onChange={e => setVille(e.target.value)} placeholder="Ville *"
@@ -345,7 +345,7 @@ export default function DonPage() {
           {mode === "payer" && (
             <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
               <p className="text-sm font-semibold text-slate-600">Moyen de paiement</p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button" onClick={() => setModePaiement("stripe")}
                   className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
                   style={modePaiement === "stripe" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>

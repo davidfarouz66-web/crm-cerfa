@@ -124,9 +124,9 @@ export default function GalaDetailPage() {
 
       {/* Stats rapides */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
           <h1 className="font-bold text-slate-800 text-lg">{gala.titre}</h1>
-          <span className={`text-xs px-3 py-1 rounded-full font-medium ${actif ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+          <span className={`w-fit text-xs px-3 py-1 rounded-full font-medium ${actif ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
             {actif ? "En cours" : "Inactif"}
           </span>
         </div>
@@ -138,7 +138,7 @@ export default function GalaDetailPage() {
           <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: couleurPrimaire }} />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
           <a href={`/gala/${id}/ecran`} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-1.5 bg-slate-800 text-white py-2 rounded-xl text-xs font-semibold hover:bg-slate-700">
             <Monitor size={13} /> Projecteur
@@ -157,18 +157,18 @@ export default function GalaDetailPage() {
       {/* QR code + lien */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
         <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2"><QrCode size={16} /> Lien & QR code de don</h2>
-        <div className="flex items-center gap-5">
-          <img src={qrUrl} alt="QR code" className="w-28 h-28 rounded-xl" />
-          <div className="flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+          <img src={qrUrl} alt="QR code" className="w-32 h-32 sm:w-28 sm:h-28 rounded-xl mx-auto sm:mx-0" />
+          <div className="flex-1 min-w-0 text-center sm:text-left">
             <p className="text-xs text-slate-400 mb-1">Lien de don à partager :</p>
             <p className="text-xs font-mono text-slate-600 break-all mb-3">{donUrl}</p>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button onClick={copyLink}
-                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
+                className="flex items-center justify-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
                 <Link2 size={12} /> {copiedLink ? "Copié !" : "Copier"}
               </button>
               <a href={`/api/gala/${id}/pdf/affiche`} target="_blank"
-                className="flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700 bg-purple-50 px-3 py-2 rounded-lg">
+                className="flex items-center justify-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700 bg-purple-50 px-3 py-2 rounded-lg">
                 <FileDown size={12} /> Affiche PDF
               </a>
             </div>
@@ -216,7 +216,7 @@ export default function GalaDetailPage() {
               placeholder="https://youtube.com/watch?v=..."
               className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Objectif (€)</label>
               <input type="number" value={objectif} onChange={e => setObjectif(e.target.value)} min="1" required
@@ -230,7 +230,7 @@ export default function GalaDetailPage() {
           </div>
           <input value={lieu} onChange={e => setLieu(e.target.value)} placeholder="Lieu"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Couleur principale</label>
               <div className="flex items-center gap-2">
@@ -314,9 +314,11 @@ export default function GalaDetailPage() {
                     </div>
                   </label>
                   {mensualiteDebutMode === "date" && (
-                    <input type="date" value={mensualiteDebutDate} onChange={e => setMensualiteDebutDate(e.target.value)}
-                      min={new Date().toISOString().split("T")[0]}
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ml-7" />
+                    <div className="sm:ml-7">
+                      <input type="date" value={mensualiteDebutDate} onChange={e => setMensualiteDebutDate(e.target.value)}
+                        min={new Date().toISOString().split("T")[0]}
+                        className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
                   )}
                 </div>
               </div>
