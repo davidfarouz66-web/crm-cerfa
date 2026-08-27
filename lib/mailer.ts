@@ -14,6 +14,27 @@ type SendMailInput = {
   attachments?: Attachment[];
 };
 
+function getAddressCount(value: unknown) {
+  return Array.isArray(value) ? value.length : 0;
+}
+
+function assertDelivered(transport: string, info: { accepted?: unknown; rejected?: unknown; response?: string; messageId?: string }) {
+  const acceptedCount = getAddressCount(info.accepted);
+  const rejectedCount = getAddressCount(info.rejected);
+
+  console.info("[mail sent]", {
+    transport,
+    acceptedCount,
+    rejectedCount,
+    messageId: info.messageId,
+    response: info.response,
+  });
+
+  if (rejectedCount > 0 || acceptedCount === 0) {
+    throw new Error(`Email refusé par le serveur ${transport}.`);
+  }
+}
+
 function hasSmtpConfig() {
   return !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD);
 }
@@ -43,13 +64,15 @@ async function sendWithSmtp(input: SendMailInput) {
     },
   });
 
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: getSenderEmail(),
     to: input.to,
     subject: input.subject,
     html: input.html,
     attachments: input.attachments,
   });
+
+  assertDelivered("smtp", info);
 }
 
 async function sendWithBrevoSmtp(input: SendMailInput) {
@@ -63,13 +86,15 @@ async function sendWithBrevoSmtp(input: SendMailInput) {
     },
   });
 
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: getSenderEmail(),
     to: input.to,
     subject: input.subject,
     html: input.html,
     attachments: input.attachments,
   });
+
+  assertDelivered("brevo-smtp", info);
 }
 
 async function sendWithResend(input: SendMailInput) {
