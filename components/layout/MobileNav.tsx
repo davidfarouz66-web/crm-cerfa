@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, X, BarChart3, Settings, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, X, BarChart3, Settings, LogOut, Shield, Tv } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
 const navItems = [
@@ -29,6 +29,10 @@ export default function MobileNav() {
           <Link href="/recapitulatif" onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
             <BarChart3 size={17} className="text-slate-400" /> Bilan
+          </Link>
+          <Link href="/gala" onClick={() => setOpen(false)}
+            className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50">
+            <Tv size={17} className="text-slate-400" /> Campagnes
           </Link>
           <Link href="/parametres" onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50">

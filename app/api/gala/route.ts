@@ -23,6 +23,7 @@ export async function POST(req: Request) {
       tenantId: t.tenantId,
       titre: body.titre,
       description: body.description || null,
+      logoUrl: body.logoUrl || null,
       objectif: parseFloat(body.objectif),
       dateEvenement: new Date(body.dateEvenement),
       lieu: body.lieu || null,

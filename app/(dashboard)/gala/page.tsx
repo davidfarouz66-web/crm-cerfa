@@ -59,20 +59,20 @@ export default function GalaPage() {
             <Tv size={20} className="text-purple-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-800">Galas</h1>
-            <p className="text-slate-500 text-sm">Gérer vos événements en direct</p>
+            <h1 className="text-xl font-bold text-slate-800">Campagnes</h1>
+            <p className="text-slate-500 text-sm">Créer et partager vos liens de don</p>
           </div>
         </div>
         <button onClick={() => setShowForm(true)}
           className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-purple-700 transition-colors">
-          <Plus size={16} /> Nouveau gala
+          <Plus size={16} /> Nouvelle campagne
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleCreate} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4 mb-6">
-          <h2 className="text-sm font-semibold text-slate-700">Nouveau gala</h2>
-          <input required value={titre} onChange={e => setTitre(e.target.value)} placeholder="Titre de l'événement *"
+          <h2 className="text-sm font-semibold text-slate-700">Nouvelle campagne</h2>
+          <input required value={titre} onChange={e => setTitre(e.target.value)} placeholder="Titre de la campagne *"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm" />
           <div className="grid grid-cols-2 gap-4">
             <input required type="number" value={objectif} onChange={e => setObjectif(e.target.value)} placeholder="Objectif (€) *" min="1"
@@ -109,7 +109,7 @@ export default function GalaPage() {
       {galas.length === 0 ? (
         <div className="text-center py-16 text-slate-400">
           <Tv size={40} className="mx-auto mb-3 opacity-30" />
-          <p>Aucun gala pour l'instant</p>
+          <p>Aucune campagne pour l&apos;instant</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -154,16 +154,16 @@ export default function GalaPage() {
                   </a>
                   <a href={`/gala/${g.id}`}
                     className="flex items-center justify-center gap-1.5 bg-blue-600 text-white px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors">
-                    Paramètres
+                    Modifier
                   </a>
                 </div>
 
-                {/* Lien donateur + QR code */}
+                {/* Lien de don + QR code */}
                 <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-4">
                   <img src={qrUrl} alt="QR code don" className="w-20 h-20 rounded-lg shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold text-slate-600 mb-1 flex items-center gap-1">
-                      <QrCode size={12} /> Lien donateurs
+                      <QrCode size={12} /> Lien de don
                     </p>
                     <p className="text-xs font-mono text-slate-500 truncate">{donUrl}</p>
                     <button onClick={() => copyLink(g.id)}

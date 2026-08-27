@@ -16,7 +16,7 @@ const navItems = [
   { href: "/cerfa", label: "Liste CERFA", icon: FileText },
   { href: "/recapitulatif", label: "Récapitulatif", icon: BarChart3 },
   { href: "/import", label: "Import CSV", icon: Upload },
-  { href: "/gala", label: "Galas", icon: Tv },
+  { href: "/gala", label: "Campagnes", icon: Tv },
   { href: "/parametres", label: "Paramètres", icon: Settings },
 ];
 

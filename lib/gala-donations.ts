@@ -50,7 +50,7 @@ function donorDisplayName(input: PaidGalaDonationInput) {
 
 async function issueCerfaForGalaDonation(donId: string, input: PaidGalaDonationInput) {
   const gala = await prisma.gala.findUnique({ where: { id: input.galaId } });
-  if (!gala) throw new Error("Gala introuvable");
+  if (!gala) throw new Error("Campagne introuvable");
 
   const association = await prisma.association.findFirst({ where: { tenantId: gala.tenantId } });
   if (!association) throw new Error("Association non configurée");
@@ -106,7 +106,7 @@ async function issueCerfaForGalaDonation(donId: string, input: PaidGalaDonationI
     dateDon,
     montant: input.montant,
     modePaiement: input.modePaiement,
-    objetDon: `Don gala - ${gala.titre}`,
+    objetDon: `Don campagne - ${gala.titre}`,
     natureDon: "numeraire",
     formeDon: "declaration_manuel",
     articleFiscal: association.articlesFiscauxAutorises || "200",

@@ -8,7 +8,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const body = await req.json();
 
   const gala = await prisma.gala.findUnique({ where: { id } });
-  if (!gala) return NextResponse.json({ error: "Gala introuvable" }, { status: 404 });
+  if (!gala) return NextResponse.json({ error: "Campagne introuvable" }, { status: 404 });
 
   const don = await recordPaidGalaDonation({
     galaId: id,

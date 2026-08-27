@@ -25,6 +25,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     data: {
       titre: body.titre,
       description: body.description || null,
+      logoUrl: body.logoUrl || null,
       videoUrl: body.videoUrl || null,
       objectif: body.objectif ? parseFloat(body.objectif) : undefined,
       dateEvenement: body.dateEvenement ? new Date(body.dateEvenement) : undefined,

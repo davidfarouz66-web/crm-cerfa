@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Save, ArrowLeft, Monitor, Smartphone, QrCode, Link2, FileDown } from "lucide-react";
+import { Loader2, Save, ArrowLeft, Monitor, Smartphone, QrCode, Link2, FileDown, ImageIcon, Upload, X } from "lucide-react";
 
 interface Gala {
-  id: string; titre: string; description: string | null; videoUrl: string | null;
+  id: string; titre: string; description: string | null; logoUrl: string | null; videoUrl: string | null;
   objectif: number; dateEvenement: string; lieu: string | null;
   couleurPrimaire: string; couleurSecondaire: string;
   promesseEnabled: boolean; mensualiteEnabled: boolean;
@@ -27,9 +27,11 @@ export default function GalaDetailPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   const [titre, setTitre] = useState("");
   const [description, setDescription] = useState("");
+  const [campaignImageUrl, setCampaignImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [objectif, setObjectif] = useState("");
   const [dateEvenement, setDateEvenement] = useState("");
@@ -48,6 +50,7 @@ export default function GalaDetailPage() {
       setGala(g);
       setTitre(g.titre);
       setDescription(g.description || "");
+      setCampaignImageUrl(g.logoUrl || "");
       setVideoUrl(g.videoUrl || "");
       setObjectif(String(g.objectif));
       setDateEvenement(g.dateEvenement ? g.dateEvenement.slice(0, 16) : "");
@@ -76,7 +79,7 @@ export default function GalaDetailPage() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        titre, description, videoUrl, objectif, dateEvenement, lieu,
+        titre, description, logoUrl: campaignImageUrl, videoUrl, objectif, dateEvenement, lieu,
         couleurPrimaire, couleurSecondaire, actif,
         promesseEnabled, mensualiteEnabled,
         mensualiteOptions: mensualiteOptions.join(","),
@@ -87,6 +90,17 @@ export default function GalaDetailPage() {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
+  }
+
+  async function handleCoverUpload(file: File) {
+    setUploadingCover(true);
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("type", "campaign");
+    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const data = await res.json();
+    setUploadingCover(false);
+    if (data.url) setCampaignImageUrl(data.url);
   }
 
   function copyLink() {
@@ -105,7 +119,7 @@ export default function GalaDetailPage() {
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">
       <button onClick={() => router.push("/gala")} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm mb-6">
-        <ArrowLeft size={16} /> Retour aux galas
+        <ArrowLeft size={16} /> Retour aux campagnes
       </button>
 
       {/* Stats rapides */}
@@ -135,18 +149,18 @@ export default function GalaDetailPage() {
           </a>
           <a href={`/gala/${id}/don`} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-1.5 bg-blue-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-blue-700">
-            Page dons
+            Page don
           </a>
         </div>
       </div>
 
       {/* QR code + lien */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
-        <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2"><QrCode size={16} /> Lien & QR code donateurs</h2>
+        <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2"><QrCode size={16} /> Lien & QR code de don</h2>
         <div className="flex items-center gap-5">
           <img src={qrUrl} alt="QR code" className="w-28 h-28 rounded-xl" />
           <div className="flex-1">
-            <p className="text-xs text-slate-400 mb-1">Lien de don :</p>
+            <p className="text-xs text-slate-400 mb-1">Lien de don à partager :</p>
             <p className="text-xs font-mono text-slate-600 break-all mb-3">{donUrl}</p>
             <div className="flex gap-2">
               <button onClick={copyLink}
@@ -170,6 +184,29 @@ export default function GalaDetailPage() {
           <h2 className="text-sm font-semibold text-slate-700">Informations générales</h2>
           <input value={titre} onChange={e => setTitre(e.target.value)} placeholder="Titre *" required
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <div>
+            <label className="text-xs text-slate-500 mb-2 flex items-center gap-1.5">
+              <ImageIcon size={13} /> Image principale de la campagne
+            </label>
+            <label className="relative block border-2 border-dashed border-slate-200 rounded-xl overflow-hidden cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
+              {campaignImageUrl ? (
+                <>
+                  <img src={campaignImageUrl} alt="Image de campagne" className="w-full aspect-video object-cover" />
+                  <button type="button" onClick={(e) => { e.preventDefault(); setCampaignImageUrl(""); }}
+                    className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 text-slate-600 flex items-center justify-center shadow-sm hover:bg-white">
+                    <X size={16} />
+                  </button>
+                </>
+              ) : (
+                <div className="aspect-video flex flex-col items-center justify-center text-slate-400">
+                  {uploadingCover ? <Loader2 size={24} className="animate-spin text-blue-500" /> : <Upload size={24} />}
+                  <p className="text-xs mt-2">Ajouter une image</p>
+                </div>
+              )}
+              <input type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
+                onChange={e => e.target.files?.[0] && handleCoverUpload(e.target.files[0])} />
+            </label>
+          </div>
           <textarea value={description} onChange={e => setDescription(e.target.value)}
             placeholder="Description de votre association / campagne (affichée sur la page de don)"
             rows={4} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
@@ -213,7 +250,7 @@ export default function GalaDetailPage() {
           </div>
           <label className="flex items-center gap-3 cursor-pointer">
             <input type="checkbox" checked={actif} onChange={e => setActif(e.target.checked)} className="w-4 h-4" />
-            <span className="text-sm font-medium text-slate-700">Gala actif (visible en direct)</span>
+            <span className="text-sm font-medium text-slate-700">Campagne active (visible en direct)</span>
           </label>
         </div>
 

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json();
 
   const gala = await prisma.gala.findUnique({ where: { id } });
-  if (!gala) return NextResponse.json({ error: "Gala introuvable" }, { status: 404 });
+  if (!gala) return NextResponse.json({ error: "Campagne introuvable" }, { status: 404 });
 
   const origin = process.env.NEXTAUTH_URL || req.headers.get("origin") || new URL(req.url).origin;
   const nomDonateur = body.type === "societe"

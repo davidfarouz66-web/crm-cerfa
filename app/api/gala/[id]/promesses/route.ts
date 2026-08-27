@@ -8,7 +8,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json();
 
   const gala = await prisma.gala.findUnique({ where: { id } });
-  if (!gala) return NextResponse.json({ error: "Gala introuvable" }, { status: 404 });
+  if (!gala) return NextResponse.json({ error: "Campagne introuvable" }, { status: 404 });
   if (!gala.promesseEnabled) return NextResponse.json({ error: "Promesses désactivées" }, { status: 400 });
 
   const promesse = await prisma.promesseDon.create({

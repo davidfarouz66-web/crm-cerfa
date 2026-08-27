@@ -136,16 +136,18 @@ export default function DonPage() {
   return (
     <div className="min-h-screen bg-slate-50 pb-8">
       <div className="max-w-md mx-auto px-4 pt-6 space-y-4">
+        {gala.logoUrl && (
+          <div className="rounded-2xl overflow-hidden shadow-sm border border-slate-100 bg-white">
+            <img src={gala.logoUrl} alt={gala.titre} className="w-full aspect-video object-cover" />
+          </div>
+        )}
 
-        {/* Header gala */}
+        {/* Header campagne */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
           <div className="flex items-center gap-3 mb-4">
-            {gala.logoUrl
-              ? <img src={gala.logoUrl} alt="Logo" className="w-12 h-12 rounded-xl object-contain" />
-              : <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: gala.couleurPrimaire }}>
-                  <span className="text-white font-bold text-lg">{gala.titre[0]}</span>
-                </div>
-            }
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: gala.couleurPrimaire }}>
+              <span className="text-white font-bold text-lg">{gala.titre[0]}</span>
+            </div>
             <div>
               <h1 className="font-bold text-slate-800 text-lg">{gala.titre}</h1>
               {gala.lieu && <p className="text-slate-400 text-sm">{gala.lieu}</p>}
