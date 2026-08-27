@@ -51,6 +51,7 @@ export default function DonPage() {
   const [modePaiement, setModePaiement] = useState<"stripe" | "sepa">("stripe");
   const [loading, setLoading] = useState(false);
   const [promesseOk, setPromesseOk] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
 
   useEffect(() => {
     fetch(`/api/gala/${id}`).then(r => r.json()).then(setGala);
@@ -64,6 +65,7 @@ export default function DonPage() {
   async function handlePayer(e: React.FormEvent) {
     e.preventDefault();
     if (!montantFinal || parseFloat(montantFinal) <= 0) return;
+    setCheckoutError("");
     setLoading(true);
 
     const payload = {
@@ -74,6 +76,7 @@ export default function DonPage() {
       raisonSociale: typePersonne === "societe" ? raisonSociale : "",
       siret: typePersonne === "societe" ? siret : "",
       email, adresse, codePostal, ville, cerfaDemande,
+      modePaiement,
       nbFois: nbFois || 1,
       mensualiteDebutMode: gala?.mensualiteDebutMode,
       mensualiteDebutDate: gala?.mensualiteDebutDate,
@@ -85,7 +88,10 @@ export default function DonPage() {
     });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
-    else setLoading(false);
+    else {
+      setCheckoutError(data.error || "Impossible de lancer le paiement.");
+      setLoading(false);
+    }
   }
 
   async function handlePromesse(e: React.FormEvent) {
@@ -346,9 +352,14 @@ export default function DonPage() {
                 <button type="button" onClick={() => setModePaiement("sepa")}
                   className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
                   style={modePaiement === "sepa" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                  <Building2 size={15} /> Virement SEPA
+                  <Building2 size={15} /> Paiement bancaire
                 </button>
               </div>
+              {checkoutError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-xs text-red-700">
+                  {checkoutError}
+                </div>
+              )}
             </div>
           )}
 

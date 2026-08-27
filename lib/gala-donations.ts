@@ -23,6 +23,8 @@ type PaidGalaDonationInput = {
   cerfaDemande?: boolean;
   modePaiement: "stripe" | "gocardless" | "cb" | "sepa" | string;
   stripePaymentId?: string | null;
+  gocardlessBillingRequestId?: string | null;
+  gocardlessPaymentId?: string | null;
   paymentDate?: Date;
 };
 
@@ -157,9 +159,19 @@ async function issueCerfaForGalaDonation(donId: string, input: PaidGalaDonationI
 }
 
 export async function recordPaidGalaDonation(input: PaidGalaDonationInput) {
-  if (input.stripePaymentId) {
-    const existing = await prisma.donGala.findUnique({
-      where: { stripePaymentId: input.stripePaymentId },
+  const dedupeRefs = [
+    input.stripePaymentId ? { stripePaymentId: input.stripePaymentId } : null,
+    input.gocardlessBillingRequestId ? { gocardlessBillingRequestId: input.gocardlessBillingRequestId } : null,
+    input.gocardlessPaymentId ? { gocardlessPaymentId: input.gocardlessPaymentId } : null,
+  ].filter(Boolean) as Array<
+    { stripePaymentId: string } |
+    { gocardlessBillingRequestId: string } |
+    { gocardlessPaymentId: string }
+  >;
+
+  if (dedupeRefs.length) {
+    const existing = await prisma.donGala.findFirst({
+      where: { OR: dedupeRefs },
     });
     if (existing) {
       if (input.cerfaDemande && !existing.cerfaId) {
@@ -193,6 +205,8 @@ export async function recordPaidGalaDonation(input: PaidGalaDonationInput) {
       ville: clean(input.ville),
       cerfaDemande: !!input.cerfaDemande,
       stripePaymentId: input.stripePaymentId || null,
+      gocardlessBillingRequestId: input.gocardlessBillingRequestId || null,
+      gocardlessPaymentId: input.gocardlessPaymentId || null,
     },
   });
 

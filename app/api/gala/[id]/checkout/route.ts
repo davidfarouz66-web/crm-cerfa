@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { createGoCardlessPaymentLink } from "@/lib/gocardless";
 import Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
@@ -11,16 +14,69 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const gala = await prisma.gala.findUnique({ where: { id } });
   if (!gala) return NextResponse.json({ error: "Gala introuvable" }, { status: 404 });
 
+  const origin = process.env.NEXTAUTH_URL || req.headers.get("origin") || new URL(req.url).origin;
+  const nomDonateur = body.type === "societe"
+    ? body.raisonSociale
+    : `${body.prenom || ""} ${body.nom || ""}`.trim();
+
+  if (body.modePaiement === "sepa" || body.modePaiement === "gocardless") {
+    if (Number(body.nbFois || 1) > 1) {
+      return NextResponse.json({ error: "GoCardless en plusieurs fois n'est pas encore activé" }, { status: 400 });
+    }
+
+    const gcEnabled = await prisma.settings.findUnique({ where: { key: "gocardless_enabled" } });
+    if (gcEnabled?.value !== "true") {
+      return NextResponse.json({ error: "GoCardless non activé" }, { status: 400 });
+    }
+
+    const connection = await prisma.goCardlessConnection.findUnique({
+      where: { tenantId: gala.tenantId },
+    }).catch(error => {
+      console.error("[gocardless checkout status]", error);
+      return null;
+    });
+    if (!connection || connection.status !== "connected") {
+      return NextResponse.json({ error: "Le compte GoCardless de l'association n'est pas connecté" }, { status: 400 });
+    }
+
+    try {
+      const idempotencyKey = crypto.randomUUID();
+      const link = await createGoCardlessPaymentLink({
+        accessToken: connection.accessToken,
+        origin,
+        galaId: id,
+        galaTitre: gala.titre,
+        tenantId: gala.tenantId,
+        payload: body,
+        idempotencyKey,
+      });
+
+      await prisma.goCardlessPaymentIntent.create({
+        data: {
+          tenantId: gala.tenantId,
+          galaId: id,
+          billingRequestId: link.billingRequest.id,
+          billingRequestFlowId: link.flow.id,
+          paymentId: link.billingRequest.links?.payment_request || null,
+          amount: parseFloat(body.montant),
+          currency: "EUR",
+          status: link.billingRequest.status || "pending",
+          donorPayload: body as Prisma.InputJsonValue,
+          authorisationUrl: link.flow.authorisation_url,
+        },
+      });
+
+      return NextResponse.json({ provider: "gocardless", url: link.flow.authorisation_url });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Lien GoCardless impossible";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
   const stripeKey = await prisma.settings.findUnique({ where: { key: "stripe_secret_key" } });
   if (!stripeKey?.value) return NextResponse.json({ error: "Stripe non configuré" }, { status: 400 });
 
   const stripe = new Stripe(stripeKey.value);
-
-  const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL || "";
-
-  const nomDonateur = body.type === "societe"
-    ? body.raisonSociale
-    : `${body.prenom || ""} ${body.nom || ""}`.trim();
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],

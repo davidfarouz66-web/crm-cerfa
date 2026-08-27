@@ -129,6 +129,7 @@ model Gala {
   mensualiteDebutDate   DateTime?
   dons                  DonGala[]
   promesses             PromesseDon[]
+  gocardlessPaymentIntents GoCardlessPaymentIntent[]
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 }
@@ -152,11 +153,46 @@ model DonGala {
   ville         String?
   cerfaDemande  Boolean  @default(false)
   stripePaymentId String? @unique
+  gocardlessBillingRequestId String? @unique
+  gocardlessPaymentId        String? @unique
   cerfaId       String?  @unique
   cerfa         Cerfa?   @relation(fields: [cerfaId], references: [id], onDelete: SetNull)
   cerfaSentAt   DateTime?
   cerfaError    String?
   createdAt     DateTime @default(now())
+}
+
+model GoCardlessConnection {
+  id             String   @id @default(cuid())
+  tenantId       String   @unique
+  accessToken    String
+  organisationId String?
+  environment    String   @default("live")
+  status         String   @default("connected")
+  connectedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model GoCardlessPaymentIntent {
+  id                   String   @id @default(cuid())
+  tenantId             String
+  gala                 Gala     @relation(fields: [galaId], references: [id], onDelete: Cascade)
+  galaId               String
+  billingRequestId     String   @unique
+  billingRequestFlowId String?  @unique
+  paymentId            String?  @unique
+  amount               Float
+  currency             String   @default("EUR")
+  status               String   @default("pending")
+  donorPayload         Json
+  authorisationUrl     String?
+  donGalaId            String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([galaId])
 }
 
 model PromesseDon {

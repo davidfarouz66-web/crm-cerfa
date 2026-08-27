@@ -80,9 +80,22 @@ const TABS = [
 ] as const;
 type Tab = typeof TABS[number]["id"];
 
+interface GoCardlessStatus {
+  configured: boolean;
+  connected: boolean;
+  environment: string;
+  organisationId?: string | null;
+  connectedAt?: string | null;
+  migrationRequired?: boolean;
+}
+
 export default function ParametresPage() {
   const { data: session } = useSession();
-  const [tab, setTab] = useState<Tab>("association");
+  const [tab, setTab] = useState<Tab>(() => {
+    if (typeof window === "undefined") return "association";
+    const requestedTab = new URLSearchParams(window.location.search).get("tab");
+    return requestedTab && TABS.some(t => t.id === requestedTab) ? requestedTab as Tab : "association";
+  });
 
   // Association
   const [assoc, setAssoc] = useState<Association>({});
@@ -111,7 +124,7 @@ export default function ParametresPage() {
   const [stripePublicKey, setStripePublicKey] = useState("");
   const [stripeSecretKey, setStripeSecretKey] = useState("");
   const [gcEnabled, setGcEnabled] = useState(false);
-  const [gcToken, setGcToken] = useState("");
+  const [gcStatus, setGcStatus] = useState<GoCardlessStatus | null>(null);
   const [savingPaiements, setSavingPaiements] = useState(false);
   const [savedPaiements, setSavedPaiements] = useState("");
 
@@ -126,8 +139,8 @@ export default function ParametresPage() {
       setStripePublicKey(d.stripe_public_key || "");
       setStripeSecretKey(d.stripe_secret_key || "");
       setGcEnabled(d.gocardless_enabled === "true");
-      setGcToken(d.gocardless_access_token || "");
     });
+    fetch("/api/gocardless/status").then(r => r.json()).then(setGcStatus);
   }, []);
 
   useEffect(() => {
@@ -198,10 +211,19 @@ export default function ParametresPage() {
     await fetch("/api/reglages/paiements", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stripe_enabled: String(stripeEnabled), stripe_public_key: stripePublicKey, stripe_secret_key: stripeSecretKey, gocardless_enabled: String(gcEnabled), gocardless_access_token: gcToken }),
+      body: JSON.stringify({ stripe_enabled: String(stripeEnabled), stripe_public_key: stripePublicKey, stripe_secret_key: stripeSecretKey, gocardless_enabled: String(gcEnabled) }),
     });
     setSavingPaiements(false);
     setSavedPaiements("Paiements enregistrés."); setTimeout(() => setSavedPaiements(""), 3000);
+  }
+
+  async function handleDisconnectGoCardless() {
+    setSavingPaiements(true);
+    await fetch("/api/gocardless/disconnect", { method: "POST" });
+    const status = await fetch("/api/gocardless/status").then(r => r.json());
+    setGcStatus(status);
+    setSavingPaiements(false);
+    setSavedPaiements("GoCardless déconnecté."); setTimeout(() => setSavedPaiements(""), 3000);
   }
 
   if (loading) return (
@@ -529,18 +551,50 @@ export default function ParametresPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-slate-800">GoCardless</p>
-                <p className="text-xs text-slate-400">Virement SEPA · ~1% plafonné à 2€</p>
+                <p className="text-xs text-slate-400">Paiement bancaire · compte de l&apos;association</p>
               </div>
               <Toggle checked={gcEnabled} onChange={setGcEnabled} />
             </div>
             {gcEnabled && (
               <div className="space-y-3 pt-2 border-t border-slate-100">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Token d&apos;accès</label>
-                  <SecretInput value={gcToken} onChange={setGcToken} placeholder="live_..." />
+                <div className={`rounded-xl px-3 py-2 text-xs border ${
+                  gcStatus?.connected
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    : "bg-amber-50 border-amber-200 text-amber-700"
+                }`}>
+                  {gcStatus?.connected ? (
+                    <>
+                      Compte GoCardless connecté
+                      {gcStatus.organisationId ? ` · Organisation ${gcStatus.organisationId}` : ""}
+                      {gcStatus.environment ? ` · ${gcStatus.environment}` : ""}
+                    </>
+                  ) : gcStatus?.migrationRequired ? (
+                    "Migration base de données GoCardless à appliquer avant connexion."
+                  ) : gcStatus?.configured ? (
+                    "Aucun compte GoCardless connecté pour cette association."
+                  ) : (
+                    "L'app GoCardless n'est pas encore configurée dans Vercel."
+                  )}
                 </div>
-                <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
-                  Nécessite un compte GoCardless avec SIRET et RIB professionnel.
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <a href="/api/gocardless/connect"
+                    className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white transition-colors ${
+                      gcStatus?.configured && !gcStatus?.migrationRequired ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-300 pointer-events-none"
+                    }`}>
+                    <CreditCard size={16} />
+                    {gcStatus?.connected ? "Reconnecter GoCardless" : "Connecter GoCardless"}
+                  </a>
+                  {gcStatus?.connected && (
+                    <button type="button" onClick={handleDisconnectGoCardless}
+                      className="px-4 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-600 hover:bg-slate-50">
+                      Déconnecter
+                    </button>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-blue-700">
+                  Chaque association connecte son propre compte GoCardless. Les paiements créés depuis sa page de don sont encaissés par ce compte.
                 </div>
               </div>
             )}

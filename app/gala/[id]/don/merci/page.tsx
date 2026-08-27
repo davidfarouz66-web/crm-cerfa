@@ -1,14 +1,16 @@
 "use client";
 
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { Heart } from "lucide-react";
 
 interface Gala { titre: string; couleurPrimaire: string; }
 
-export default function MerciPage() {
+function MerciContent() {
   const { id } = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const [gala, setGala] = useState<Gala | null>(null);
+  const provider = searchParams.get("provider");
 
   useEffect(() => {
     fetch(`/api/gala/${id}`).then(r => r.json()).then(setGala);
@@ -23,9 +25,19 @@ export default function MerciPage() {
         </div>
         <h1 className="text-2xl font-black text-slate-800 mb-2">Merci pour votre don !</h1>
         <p className="text-slate-500 text-sm">
-          Votre généreux geste va contribuer au succès de{" "}
-          <strong>{gala?.titre || "cet événement"}</strong>.
-          Il apparaît maintenant sur l'écran en direct.
+          {provider === "gocardless" ? (
+            <>
+              Votre paiement bancaire est en cours de validation pour{" "}
+              <strong>{gala?.titre || "cet événement"}</strong>.
+              Le reçu fiscal sera envoyé après confirmation GoCardless.
+            </>
+          ) : (
+            <>
+              Votre généreux geste va contribuer au succès de{" "}
+              <strong>{gala?.titre || "cet événement"}</strong>.
+              Il apparaît maintenant sur l&apos;écran en direct.
+            </>
+          )}
         </p>
         {gala && (
           <a href={`/gala/${id}/don`}
@@ -36,5 +48,13 @@ export default function MerciPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function MerciPage() {
+  return (
+    <Suspense fallback={null}>
+      <MerciContent />
+    </Suspense>
   );
 }
