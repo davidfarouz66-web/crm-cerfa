@@ -82,6 +82,7 @@ type Tab = typeof TABS[number]["id"];
 
 interface GoCardlessStatus {
   configured: boolean;
+  directTokenConfigured?: boolean;
   connected: boolean;
   environment: string;
   organisationId?: string | null;
@@ -145,8 +146,10 @@ export default function ParametresPage() {
 
   useEffect(() => {
     if (session?.user) {
-      setNom((session.user as { name?: string }).name || "");
-      setEmailCompte(session.user.email || "");
+      queueMicrotask(() => {
+        setNom((session.user as { name?: string }).name || "");
+        setEmailCompte(session.user.email || "");
+      });
     }
   }, [session]);
 
@@ -564,7 +567,7 @@ export default function ParametresPage() {
                 }`}>
                   {gcStatus?.connected ? (
                     <>
-                      Compte GoCardless connecté
+                      {gcStatus.directTokenConfigured ? "Jeton GoCardless configuré" : "Compte GoCardless connecté"}
                       {gcStatus.organisationId ? ` · Organisation ${gcStatus.organisationId}` : ""}
                       {gcStatus.environment ? ` · ${gcStatus.environment}` : ""}
                     </>
@@ -577,24 +580,28 @@ export default function ParametresPage() {
                   )}
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <a href="/api/gocardless/connect"
-                    className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white transition-colors ${
-                      gcStatus?.configured && !gcStatus?.migrationRequired ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-300 pointer-events-none"
-                    }`}>
-                    <CreditCard size={16} />
-                    {gcStatus?.connected ? "Reconnecter GoCardless" : "Connecter GoCardless"}
-                  </a>
+                {!gcStatus?.directTokenConfigured && (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <a href="/api/gocardless/connect"
+                      className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm text-white transition-colors ${
+                        gcStatus?.configured && !gcStatus?.migrationRequired ? "bg-blue-600 hover:bg-blue-700" : "bg-slate-300 pointer-events-none"
+                      }`}>
+                      <CreditCard size={16} />
+                      {gcStatus?.connected ? "Reconnecter GoCardless" : "Connecter GoCardless"}
+                    </a>
                   {gcStatus?.connected && (
                     <button type="button" onClick={handleDisconnectGoCardless}
                       className="px-4 py-3 rounded-xl font-semibold text-sm border border-slate-200 text-slate-600 hover:bg-slate-50">
                       Déconnecter
                     </button>
                   )}
-                </div>
+                  </div>
+                )}
 
                 <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-blue-700">
-                  Chaque association connecte son propre compte GoCardless. Les paiements créés depuis sa page de don sont encaissés par ce compte.
+                  {gcStatus?.directTokenConfigured
+                    ? "Les paiements créés depuis les pages de don sont encaissés par le compte GoCardless configuré dans Vercel."
+                    : "Chaque association connecte son propre compte GoCardless. Les paiements créés depuis sa page de don sont encaissés par ce compte."}
                 </div>
               </div>
             )}

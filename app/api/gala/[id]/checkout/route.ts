@@ -35,14 +35,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       console.error("[gocardless checkout status]", error);
       return null;
     });
-    if (!connection || connection.status !== "connected") {
+    const goCardlessAccessToken = connection?.status === "connected"
+      ? connection.accessToken
+      : process.env.GOCARDLESS_ACCESS_TOKEN;
+    if (!goCardlessAccessToken) {
       return NextResponse.json({ error: "Le compte GoCardless de l'association n'est pas connecté" }, { status: 400 });
     }
 
     try {
       const idempotencyKey = crypto.randomUUID();
       const link = await createGoCardlessPaymentLink({
-        accessToken: connection.accessToken,
+        accessToken: goCardlessAccessToken,
         origin,
         galaId: id,
         galaTitre: gala.titre,

@@ -84,15 +84,17 @@ async function handleEvent(event: GoCardlessEvent) {
     const billingRequestId = event.links?.billing_request;
     if (!billingRequestId) return;
 
-    const intent = await prisma.goCardlessPaymentIntent.findUnique({
+    await prisma.goCardlessPaymentIntent.update({
       where: { billingRequestId },
-      select: { id: true },
-    });
-    if (intent) await completePaymentIntent(intent.id, event);
+      data: {
+        status: event.action,
+        paymentId: event.links?.payment || undefined,
+      },
+    }).catch(() => {});
     return;
   }
 
-  if (event.resource_type === "payments" && ["confirmed", "paid_out", "created"].includes(event.action)) {
+  if (event.resource_type === "payments" && ["confirmed", "paid_out"].includes(event.action)) {
     const paymentId = event.links?.payment;
     if (!paymentId) return;
 
