@@ -146,9 +146,10 @@ export default function ParametresPage() {
 
   useEffect(() => {
     if (session?.user) {
+      const user = session.user;
       queueMicrotask(() => {
-        setNom((session.user as { name?: string }).name || "");
-        setEmailCompte(session.user.email || "");
+        setNom((user as { name?: string }).name || "");
+        setEmailCompte(user.email || "");
       });
     }
   }, [session]);
