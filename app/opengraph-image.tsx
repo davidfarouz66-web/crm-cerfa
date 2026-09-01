@@ -68,7 +68,7 @@ export default async function Image() {
           borderRadius: 999, padding: "10px 28px",
           color: "white", fontSize: 22, fontWeight: 500,
         }}>
-          crm-cerfa.vercel.app
+          www.trouma-pro.fr
         </div>
       </div>
     ),

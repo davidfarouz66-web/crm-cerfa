@@ -4,14 +4,14 @@ import Providers from "./providers";
 import OpenInBrowser from "@/components/OpenInBrowser";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://crm-cerfa.vercel.app"),
+  metadataBase: new URL("https://www.trouma-pro.fr"),
   title: "CRM Cerfa — Gestion des dons",
   description: "CRM de gestion des donateurs et génération de reçus fiscaux CERFA",
   manifest: "/manifest.json",
   openGraph: {
     title: "CRM Cerfa — Gestion des dons",
     description: "Gérez vos donateurs et générez vos reçus fiscaux CERFA en quelques clics.",
-    url: "https://crm-cerfa.vercel.app",
+    url: "https://www.trouma-pro.fr",
     siteName: "CRM Cerfa",
     images: [
       {
