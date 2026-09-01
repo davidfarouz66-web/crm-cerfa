@@ -50,7 +50,7 @@ export default function Home() {
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
               <Heart size={20} />
             </span>
-            <span className="whitespace-nowrap text-base font-bold text-slate-900 sm:text-lg">Trouma-Pro</span>
+            <span className="whitespace-nowrap text-base font-bold text-slate-900 sm:text-lg">CRM Cerfa</span>
           </Link>
           <div className="flex items-center gap-2">
             <Link
@@ -78,7 +78,7 @@ export default function Home() {
               CRM dons, paiements et reçus fiscaux
             </div>
             <h1 className="max-w-3xl text-4xl font-black tracking-normal text-slate-950 sm:text-5xl">
-              Trouma-Pro
+              CRM Cerfa
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
               La plateforme qui aide les associations à collecter les dons, suivre les donateurs et envoyer les CERFA sans perdre des heures sur les fichiers.
@@ -166,7 +166,7 @@ export default function Home() {
             <h2 className="mt-1 text-2xl font-black text-slate-950">Une collecte plus simple pour l&apos;association</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-slate-600">
-            Trouma-Pro garde le côté administratif discret, pour que l&apos;équipe puisse se concentrer sur la cause.
+            CRM Cerfa garde le côté administratif discret, pour que l&apos;équipe puisse se concentrer sur la cause.
           </p>
         </div>
 

@@ -57,7 +57,7 @@ export async function POST(req: Request) {
       html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
         <div style="background: #1e3a8a; padding: 24px 32px; border-radius: 12px 12px 0 0;">
-          <h1 style="color: white; margin: 0; font-size: 20px;">Trouma Pro</h1>
+          <h1 style="color: white; margin: 0; font-size: 20px;">CRM Cerfa</h1>
           <p style="color: #93c5fd; margin: 4px 0 0; font-size: 13px;">Gestion des dons et reçus fiscaux</p>
         </div>
         <div style="background: #f8fafc; padding: 32px; border: 1px solid #e2e8f0; border-top: none; border-radius: 0 0 12px 12px;">
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
             Ce reçu fiscal vous permet de déduire votre don de vos impôts conformément aux articles 200, 238 bis ou 978 du CGI.
           </p>
           <p style="margin: 0; font-size: 12px; color: #94a3b8;">
-            Ce message vous est transmis par <strong>Trouma Pro</strong> pour le compte de ${association.nom}.
+            Ce message vous est transmis par <strong>CRM Cerfa</strong> pour le compte de ${association.nom}.
           </p>
         </div>
       </div>

@@ -26,11 +26,11 @@ export async function POST(req: Request) {
 
     await sendMail({
       to: email,
-      subject: "Réinitialisation de votre mot de passe — Trouma-Pro",
+      subject: "Réinitialisation de votre mot de passe — CRM Cerfa",
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
           <div style="background:#1e3a6e;padding:24px 32px;border-radius:8px 8px 0 0">
-            <h1 style="color:white;margin:0;font-size:20px">Trouma-Pro</h1>
+            <h1 style="color:white;margin:0;font-size:20px">CRM Cerfa</h1>
             <p style="color:#a8c4e8;margin:4px 0 0;font-size:14px">Réinitialisation du mot de passe</p>
           </div>
           <div style="padding:32px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">

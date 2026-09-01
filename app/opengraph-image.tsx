@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "nodejs";
-export const alt = "Trouma-Pro — Gestion des dons & CERFA";
+export const alt = "CRM Cerfa — Gestion des dons & CERFA";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -49,7 +49,7 @@ export default async function Image() {
           fontSize: 72, fontWeight: 800, color: "white",
           letterSpacing: "-2px", marginBottom: 16,
         }}>
-          Trouma-Pro
+          CRM Cerfa
         </div>
 
         {/* Sous-titre */}
@@ -68,7 +68,7 @@ export default async function Image() {
           borderRadius: 999, padding: "10px 28px",
           color: "white", fontSize: 22, fontWeight: 500,
         }}>
-          trouma-pro.fr
+          crm-cerfa.vercel.app
         </div>
       </div>
     ),

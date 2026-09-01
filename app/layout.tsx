@@ -4,21 +4,21 @@ import Providers from "./providers";
 import OpenInBrowser from "@/components/OpenInBrowser";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.trouma-pro.fr"),
-  title: "Trouma-Pro — Gestion des dons",
+  metadataBase: new URL("https://crm-cerfa.vercel.app"),
+  title: "CRM Cerfa — Gestion des dons",
   description: "CRM de gestion des donateurs et génération de reçus fiscaux CERFA",
   manifest: "/manifest.json",
   openGraph: {
-    title: "Trouma-Pro — Gestion des dons",
+    title: "CRM Cerfa — Gestion des dons",
     description: "Gérez vos donateurs et générez vos reçus fiscaux CERFA en quelques clics.",
-    url: "https://www.trouma-pro.fr",
-    siteName: "Trouma-Pro",
+    url: "https://crm-cerfa.vercel.app",
+    siteName: "CRM Cerfa",
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "Trouma-Pro — Gestion des dons & CERFA",
+        alt: "CRM Cerfa — Gestion des dons & CERFA",
       },
     ],
     locale: "fr_FR",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Trouma-Pro — Gestion des dons",
+    title: "CRM Cerfa — Gestion des dons",
     description: "Gérez vos donateurs et générez vos reçus fiscaux CERFA en quelques clics.",
     images: ["/opengraph-image"],
   },

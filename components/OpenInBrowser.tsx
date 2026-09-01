@@ -31,7 +31,7 @@ export default function OpenInBrowser() {
         </div>
         <h2 className="text-lg font-bold text-slate-800">Ouvrir dans votre navigateur</h2>
         <p className="text-sm text-slate-500">
-          Trouma-Pro nécessite un navigateur complet (Safari ou Chrome) pour fonctionner correctement.
+          CRM Cerfa nécessite un navigateur complet (Safari ou Chrome) pour fonctionner correctement.
         </p>
         <a
           href={url}

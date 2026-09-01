@@ -37,7 +37,7 @@ export default function LoginPage() {
           <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Heart size={28} className="text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white">Trouma-Pro</h1>
+          <h1 className="text-3xl font-bold text-white">CRM Cerfa</h1>
           <p className="text-blue-200 mt-2">Gestion des dons & reçus fiscaux</p>
         </div>
 

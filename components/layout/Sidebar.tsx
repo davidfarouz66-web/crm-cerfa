@@ -41,7 +41,7 @@ export default function Sidebar() {
             <Heart size={18} className="text-white" />
           </div>
           <div>
-            <p className="font-bold text-white text-sm">Trouma-Pro</p>
+            <p className="font-bold text-white text-sm">CRM Cerfa</p>
             <p className="text-xs text-slate-400">Gestion des dons</p>
           </div>
         </div>
