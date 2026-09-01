@@ -40,7 +40,7 @@ export default function GalaPage() {
   }
 
   function copyLink(galaId: string) {
-    const url = `${window.location.origin}/gala/${galaId}/don`;
+    const url = `${window.location.origin}/campagnes/${galaId}/don`;
     navigator.clipboard.writeText(url);
     setCopiedId(galaId);
     setTimeout(() => setCopiedId(null), 2000);
@@ -115,7 +115,7 @@ export default function GalaPage() {
         <div className="space-y-4">
           {galas.map(g => {
             const pct = Math.min(100, Math.round((g.totalCollecte / g.objectif) * 100));
-            const donUrl = `${origin}/gala/${g.id}/don`;
+            const donUrl = `${origin}/campagnes/${g.id}/don`;
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(donUrl)}`;
             return (
               <div key={g.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
@@ -144,15 +144,15 @@ export default function GalaPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-                  <a href={`/gala/${g.id}/ecran`} target="_blank" rel="noreferrer"
+                  <a href={`/campagnes/${g.id}/ecran`} target="_blank" rel="noreferrer"
                     className="flex items-center justify-center gap-1.5 bg-slate-800 text-white px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-slate-700 transition-colors">
                     <Monitor size={13} /> Projecteur
                   </a>
-                  <a href={`/gala/${g.id}/saisie`} target="_blank" rel="noreferrer"
+                  <a href={`/campagnes/${g.id}/saisie`} target="_blank" rel="noreferrer"
                     className="flex items-center justify-center gap-1.5 bg-purple-600 text-white px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-purple-700 transition-colors">
                     <Smartphone size={13} /> Saisie staff
                   </a>
-                  <a href={`/gala/${g.id}`}
+                  <a href={`/campagnes/${g.id}`}
                     className="flex items-center justify-center gap-1.5 bg-blue-600 text-white px-3 py-2.5 rounded-xl text-xs font-semibold hover:bg-blue-700 transition-colors">
                     Modifier
                   </a>

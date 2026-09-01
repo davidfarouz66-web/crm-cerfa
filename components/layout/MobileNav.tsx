@@ -30,7 +30,7 @@ export default function MobileNav() {
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
             <BarChart3 size={17} className="text-slate-400" /> Bilan
           </Link>
-          <Link href="/gala" onClick={() => setOpen(false)}
+          <Link href="/campagnes" onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors border-t border-slate-50">
             <Tv size={17} className="text-slate-400" /> Campagnes
           </Link>

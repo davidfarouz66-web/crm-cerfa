@@ -40,7 +40,7 @@ function MerciContent() {
           )}
         </p>
         {gala && (
-          <a href={`/gala/${id}/don`}
+          <a href={`/campagnes/${id}/don`}
             className="mt-6 inline-block px-6 py-3 rounded-xl text-sm font-semibold text-white"
             style={{ backgroundColor: gala.couleurPrimaire }}>
             Faire un autre don

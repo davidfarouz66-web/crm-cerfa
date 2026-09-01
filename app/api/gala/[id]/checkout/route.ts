@@ -95,8 +95,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
       quantity: 1,
     }],
-    success_url: `${origin}/gala/${id}/don/merci?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/gala/${id}/don`,
+    success_url: `${origin}/campagnes/${id}/don/merci?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${origin}/campagnes/${id}/don`,
     metadata: {
       galaId: id,
       montant: body.montant,

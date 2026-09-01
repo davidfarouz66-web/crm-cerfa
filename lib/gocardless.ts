@@ -229,8 +229,8 @@ export async function createGoCardlessPaymentLink(params: {
       body: {
         billing_request_flows: {
           auto_fulfil: true,
-          redirect_uri: `${params.origin}/gala/${params.galaId}/don/merci?provider=gocardless`,
-          exit_uri: `${params.origin}/gala/${params.galaId}/don`,
+          redirect_uri: `${params.origin}/campagnes/${params.galaId}/don/merci?provider=gocardless`,
+          exit_uri: `${params.origin}/campagnes/${params.galaId}/don`,
           prefilled_customer: prefilledCustomer,
           links: {
             billing_request: billingRequest.billing_requests.id,

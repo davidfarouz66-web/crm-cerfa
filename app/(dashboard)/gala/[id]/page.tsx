@@ -104,21 +104,21 @@ export default function GalaDetailPage() {
   }
 
   function copyLink() {
-    navigator.clipboard.writeText(`${window.location.origin}/gala/${id}/don`);
+    navigator.clipboard.writeText(`${window.location.origin}/campagnes/${id}/don`);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   }
 
   if (!gala) return <div className="flex justify-center py-24"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
-  const donUrl = typeof window !== "undefined" ? `${window.location.origin}/gala/${id}/don` : "";
+  const donUrl = typeof window !== "undefined" ? `${window.location.origin}/campagnes/${id}/don` : "";
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(donUrl)}`;
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
   const pct = Math.min(100, Math.round((gala.totalCollecte / gala.objectif) * 100));
 
   return (
     <div className="p-4 md:p-8 max-w-2xl mx-auto">
-      <button onClick={() => router.push("/gala")} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm mb-6">
+      <button onClick={() => router.push("/campagnes")} className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm mb-6">
         <ArrowLeft size={16} /> Retour aux campagnes
       </button>
 
@@ -139,15 +139,15 @@ export default function GalaDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-4">
-          <a href={`/gala/${id}/ecran`} target="_blank" rel="noreferrer"
+          <a href={`/campagnes/${id}/ecran`} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-1.5 bg-slate-800 text-white py-2 rounded-xl text-xs font-semibold hover:bg-slate-700">
             <Monitor size={13} /> Projecteur
           </a>
-          <a href={`/gala/${id}/saisie`} target="_blank" rel="noreferrer"
+          <a href={`/campagnes/${id}/saisie`} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-1.5 bg-purple-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-purple-700">
             <Smartphone size={13} /> Saisie staff
           </a>
-          <a href={`/gala/${id}/don`} target="_blank" rel="noreferrer"
+          <a href={`/campagnes/${id}/don`} target="_blank" rel="noreferrer"
             className="flex items-center justify-center gap-1.5 bg-blue-600 text-white py-2 rounded-xl text-xs font-semibold hover:bg-blue-700">
             Page don
           </a>

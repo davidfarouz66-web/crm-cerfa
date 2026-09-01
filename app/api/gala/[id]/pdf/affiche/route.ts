@@ -28,7 +28,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const assoc = await prisma.association.findFirst({ where: { tenantId: gala.tenantId } });
 
-  const donUrl = `${process.env.NEXTAUTH_URL}/gala/${id}/don`;
+  const donUrl = `${process.env.NEXTAUTH_URL}/campagnes/${id}/don`;
   const [pr, pg, pb] = hexToRgb(gala.couleurPrimaire);
   const [sr, sg, sb] = hexToRgb(gala.couleurSecondaire);
 
