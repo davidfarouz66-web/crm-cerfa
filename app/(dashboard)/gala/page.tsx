@@ -40,14 +40,16 @@ export default function GalaPage() {
   }
 
   function copyLink(galaId: string) {
-    const url = `${window.location.origin}/campagnes/${galaId}/don`;
+    const url = `${publicOrigin}/campagnes/${galaId}/don`;
     navigator.clipboard.writeText(url);
     setCopiedId(galaId);
     setTimeout(() => setCopiedId(null), 2000);
   }
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const publicOrigin =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ||
+    (typeof window !== "undefined" ? window.location.origin : "");
 
   if (loading) return <div className="flex justify-center py-24"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -115,7 +117,7 @@ export default function GalaPage() {
         <div className="space-y-4">
           {galas.map(g => {
             const pct = Math.min(100, Math.round((g.totalCollecte / g.objectif) * 100));
-            const donUrl = `${origin}/campagnes/${g.id}/don`;
+            const donUrl = `${publicOrigin}/campagnes/${g.id}/don`;
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(donUrl)}`;
             return (
               <div key={g.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">

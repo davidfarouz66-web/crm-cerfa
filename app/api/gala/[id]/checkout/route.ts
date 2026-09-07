@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { createGoCardlessPaymentLink } from "@/lib/gocardless";
+import { getPublicBaseUrl, getPublicDonationUrl } from "@/lib/public-url";
 import Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const gala = await prisma.gala.findUnique({ where: { id } });
   if (!gala) return NextResponse.json({ error: "Campagne introuvable" }, { status: 404 });
 
-  const origin = process.env.NEXTAUTH_URL || req.headers.get("origin") || new URL(req.url).origin;
+  const origin = getPublicBaseUrl(req.headers.get("origin") || new URL(req.url).origin);
+  const donationUrl = getPublicDonationUrl(id, origin);
   const nomDonateur = body.type === "societe"
     ? body.raisonSociale
     : `${body.prenom || ""} ${body.nom || ""}`.trim();
@@ -95,8 +97,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       },
       quantity: 1,
     }],
-    success_url: `${origin}/campagnes/${id}/don/merci?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origin}/campagnes/${id}/don`,
+    success_url: `${donationUrl}/merci?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: donationUrl,
     metadata: {
       galaId: id,
       montant: body.montant,

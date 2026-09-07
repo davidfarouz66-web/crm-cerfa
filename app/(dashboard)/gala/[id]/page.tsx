@@ -104,14 +104,17 @@ export default function GalaDetailPage() {
   }
 
   function copyLink() {
-    navigator.clipboard.writeText(`${window.location.origin}/campagnes/${id}/don`);
+    navigator.clipboard.writeText(donUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
   }
 
   if (!gala) return <div className="flex justify-center py-24"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
-  const donUrl = typeof window !== "undefined" ? `${window.location.origin}/campagnes/${id}/don` : "";
+  const publicOrigin =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ||
+    (typeof window !== "undefined" ? window.location.origin : "");
+  const donUrl = `${publicOrigin}/campagnes/${id}/don`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(donUrl)}`;
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
   const pct = Math.min(100, Math.round((gala.totalCollecte / gala.objectif) * 100));

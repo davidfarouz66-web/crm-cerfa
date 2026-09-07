@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { exchangeGoCardlessCode, getGoCardlessEnvironment, verifyGoCardlessState } from "@/lib/gocardless";
+import { getPublicBaseUrl } from "@/lib/public-url";
 import { requireTenant, rejectIfReadOnly } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
-  const origin = process.env.NEXTAUTH_URL || url.origin;
+  const origin = getPublicBaseUrl(url.origin);
 
   if (error) {
     return NextResponse.redirect(`${origin}/parametres?tab=paiements&gocardless=refused`);

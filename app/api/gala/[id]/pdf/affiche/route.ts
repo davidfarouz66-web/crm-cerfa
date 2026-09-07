@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getPublicDonationUrl } from "@/lib/public-url";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 function hexToRgb(hex: string): [number, number, number] {
@@ -28,7 +29,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const assoc = await prisma.association.findFirst({ where: { tenantId: gala.tenantId } });
 
-  const donUrl = `${process.env.NEXTAUTH_URL}/campagnes/${id}/don`;
+  const donUrl = getPublicDonationUrl(id);
   const [pr, pg, pb] = hexToRgb(gala.couleurPrimaire);
   const [sr, sg, sb] = hexToRgb(gala.couleurSecondaire);
 

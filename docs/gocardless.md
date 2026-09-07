@@ -28,7 +28,8 @@ Pour un compte GoCardless marchand standard sans app OAuth partenaire, configure
 GOCARDLESS_ENVIRONMENT=live
 GOCARDLESS_ACCESS_TOKEN=...
 GOCARDLESS_WEBHOOK_ENDPOINT_SECRET=...
-NEXTAUTH_URL=https://ton-domaine
+NEXTAUTH_URL=https://www.trouma-pro.fr
+NEXT_PUBLIC_APP_URL=https://www.trouma-pro.fr
 ```
 
 ### Vercel
@@ -43,6 +44,7 @@ vercel env add GOCARDLESS_CLIENT_SECRET production
 vercel env add GOCARDLESS_OAUTH_STATE_SECRET production
 vercel env add GOCARDLESS_WEBHOOK_ENDPOINT_SECRET production
 vercel env add NEXTAUTH_URL production
+vercel env add NEXT_PUBLIC_APP_URL production
 ```
 
 Puis redeploie l'application.
