@@ -20,6 +20,16 @@ const MENSUALITE_OPTIONS = [
   { value: "12", label: "12 fois" },
 ];
 
+async function readJsonResponse(res: Response) {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("Réponse serveur invalide. Rechargez la page ou reconnectez-vous.");
+  }
+}
+
 export default function GalaDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -49,11 +59,16 @@ export default function GalaDetailPage() {
   useEffect(() => {
     fetch(`/api/gala/${id}`)
       .then(async r => {
-        const g = await r.json();
+        if (r.status === 401 || r.redirected) {
+          window.location.href = `/login?callbackUrl=${encodeURIComponent(`/campagnes/${id}`)}`;
+          return null;
+        }
+        const g = await readJsonResponse(r);
         if (!r.ok || g?.error) throw new Error(g?.error || "Campagne introuvable");
         return g as Gala;
       })
       .then((g) => {
+        if (!g) return;
         setGala(g);
         setTitre(g.titre);
         setDescription(g.description || "");

@@ -9,6 +9,16 @@ interface Gala {
   promesseEnabled: boolean; _count: { dons: number };
 }
 
+async function readJsonResponse(res: Response) {
+  const text = await res.text();
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("Réponse serveur invalide. Rechargez la page ou reconnectez-vous.");
+  }
+}
+
 export default function GalaPage() {
   const [galas, setGalas] = useState<Gala[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,11 +35,11 @@ export default function GalaPage() {
   useEffect(() => {
     fetch("/api/gala")
       .then(async r => {
-        if (r.status === 401) {
-          window.location.href = "/login?callbackUrl=/campagnes";
+        if (r.status === 401 || r.redirected) {
+          window.location.href = `/login?callbackUrl=${encodeURIComponent("/campagnes")}`;
           return [];
         }
-        const d = await r.json();
+        const d = await readJsonResponse(r);
         if (!r.ok || !Array.isArray(d)) throw new Error(d?.error || "Chargement des campagnes impossible");
         return d;
       })
@@ -46,7 +56,12 @@ export default function GalaPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ titre, objectif, dateEvenement: date, lieu, promesseEnabled }),
     });
-    const gala = await res.json();
+    const gala = await readJsonResponse(res);
+    if (!res.ok || !gala?.id) {
+      setSaving(false);
+      setError(gala?.error || "Création de la campagne impossible");
+      return;
+    }
     setGalas(prev => [{ ...gala, _count: { dons: 0 } }, ...prev]);
     setSaving(false); setShowForm(false);
     setTitre(""); setObjectif(""); setDate(""); setLieu(""); setPromesseEnabled(false);
