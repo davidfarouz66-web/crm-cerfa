@@ -28,6 +28,7 @@ export default function GalaDetailPage() {
   const [saved, setSaved] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [error, setError] = useState("");
 
   const [titre, setTitre] = useState("");
   const [description, setDescription] = useState("");
@@ -46,24 +47,32 @@ export default function GalaDetailPage() {
   const [mensualiteDebutDate, setMensualiteDebutDate] = useState("");
 
   useEffect(() => {
-    fetch(`/api/gala/${id}`).then(r => r.json()).then((g: Gala) => {
-      setGala(g);
-      setTitre(g.titre);
-      setDescription(g.description || "");
-      setCampaignImageUrl(g.logoUrl || "");
-      setVideoUrl(g.videoUrl || "");
-      setObjectif(String(g.objectif));
-      setDateEvenement(g.dateEvenement ? g.dateEvenement.slice(0, 16) : "");
-      setLieu(g.lieu || "");
-      setCouleurPrimaire(g.couleurPrimaire);
-      setCouleurSecondaire(g.couleurSecondaire);
-      setActif(g.actif);
-      setPromesseEnabled(g.promesseEnabled);
-      setMensualiteEnabled(g.mensualiteEnabled);
-      setMensualiteOptions(g.mensualiteOptions ? g.mensualiteOptions.split(",") : ["2", "3", "6", "12"]);
-      setMensualiteDebutMode(g.mensualiteDebutMode as "immediat" | "date");
-      setMensualiteDebutDate(g.mensualiteDebutDate ? g.mensualiteDebutDate.slice(0, 10) : "");
-    });
+    fetch(`/api/gala/${id}`)
+      .then(async r => {
+        const g = await r.json();
+        if (!r.ok || g?.error) throw new Error(g?.error || "Campagne introuvable");
+        return g as Gala;
+      })
+      .then((g) => {
+        setGala(g);
+        setTitre(g.titre);
+        setDescription(g.description || "");
+        setCampaignImageUrl(g.logoUrl || "");
+        setVideoUrl(g.videoUrl || "");
+        setObjectif(String(g.objectif));
+        setDateEvenement(g.dateEvenement ? g.dateEvenement.slice(0, 16) : "");
+        setLieu(g.lieu || "");
+        setCouleurPrimaire(g.couleurPrimaire);
+        setCouleurSecondaire(g.couleurSecondaire);
+        setActif(g.actif);
+        setPromesseEnabled(g.promesseEnabled);
+        setMensualiteEnabled(g.mensualiteEnabled);
+        setMensualiteOptions(g.mensualiteOptions ? g.mensualiteOptions.split(",") : ["2", "3", "6", "12"]);
+        setMensualiteDebutMode(g.mensualiteDebutMode as "immediat" | "date");
+        setMensualiteDebutDate(g.mensualiteDebutDate ? g.mensualiteDebutDate.slice(0, 10) : "");
+        setError("");
+      })
+      .catch(e => setError(e instanceof Error ? e.message : "Chargement de la campagne impossible"));
   }, [id]);
 
   function toggleMensualite(val: string) {
@@ -109,7 +118,13 @@ export default function GalaDetailPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   }
 
-  if (!gala) return <div className="flex justify-center py-24"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
+  if (!gala) return error ? (
+    <div className="p-4 md:p-8 max-w-2xl mx-auto">
+      <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+        {error}
+      </div>
+    </div>
+  ) : <div className="flex justify-center py-24"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   const publicOrigin =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ||

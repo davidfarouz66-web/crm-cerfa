@@ -20,9 +20,22 @@ export default function GalaPage() {
   const [promesseEnabled, setPromesseEnabled] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("/api/gala").then(r => r.json()).then(d => { setGalas(d); setLoading(false); });
+    fetch("/api/gala")
+      .then(async r => {
+        if (r.status === 401) {
+          window.location.href = "/login?callbackUrl=/campagnes";
+          return [];
+        }
+        const d = await r.json();
+        if (!r.ok || !Array.isArray(d)) throw new Error(d?.error || "Chargement des campagnes impossible");
+        return d;
+      })
+      .then(d => { setGalas(d); setError(""); })
+      .catch(e => setError(e instanceof Error ? e.message : "Chargement des campagnes impossible"))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleCreate(e: React.FormEvent) {
@@ -52,6 +65,14 @@ export default function GalaPage() {
     (typeof window !== "undefined" ? window.location.origin : "");
 
   if (loading) return <div className="flex justify-center py-24"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
+
+  if (error) return (
+    <div className="p-4 md:p-8 max-w-3xl mx-auto">
+      <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
+        {error}
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 md:p-8 max-w-3xl mx-auto">
