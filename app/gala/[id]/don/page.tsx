@@ -84,7 +84,8 @@ export default function DonPage() {
   const montantFinal = montant || montantLibre;
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
   const mensualiteOpts = gala?.mensualiteOptions?.split(",").map(Number).filter(Boolean) || [];
-  const mensualiteMontant = nbFois && montantFinal ? Math.round((parseFloat(montantFinal) / nbFois) * 100) / 100 : null;
+  const montantMensuel = montantFinal ? parseFloat(montantFinal) : 0;
+  const totalEngagement = nbFois ? montantMensuel * nbFois : montantMensuel;
 
   async function handlePayer(e: React.FormEvent) {
     e.preventDefault();
@@ -93,7 +94,7 @@ export default function DonPage() {
     setLoading(true);
 
     const payload = {
-      montant: montantFinal, nomAffiche: anonyme ? "" : nomAffiche, anonyme,
+      montant: String(totalEngagement), montantMensuel: montantFinal, nomAffiche: anonyme ? "" : nomAffiche, anonyme,
       message,
       type: typePersonne,
       prenom: typePersonne === "particulier" ? prenom : prenomContact,
@@ -126,7 +127,7 @@ export default function DonPage() {
     await fetch(`/api/gala/${id}/promesses`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        montant: montantFinal, nomAffiche: anonyme ? "" : nomAffiche, anonyme,
+        montant: String(totalEngagement), montantMensuel: montantFinal, nomAffiche: anonyme ? "" : nomAffiche, anonyme,
         message,
         type: typePersonne,
         prenom: typePersonne === "particulier" ? prenom : prenomContact,
@@ -152,7 +153,7 @@ export default function DonPage() {
           <CalendarClock size={32} className="text-emerald-600" />
         </div>
         <h2 className="text-xl font-bold text-slate-800 mb-2">Promesse enregistrée !</h2>
-        <p className="text-slate-500 text-sm">Merci pour votre engagement. L'association vous contactera le <strong>{new Date(dateRappel).toLocaleDateString("fr-FR")}</strong> pour finaliser votre don de <strong>{fmt(parseFloat(montantFinal))}</strong>.</p>
+        <p className="text-slate-500 text-sm">Merci pour votre engagement. L'association vous contactera le <strong>{new Date(dateRappel).toLocaleDateString("fr-FR")}</strong> pour finaliser votre don de <strong>{fmt(totalEngagement)}</strong>.</p>
       </div>
     </div>
   );
@@ -247,7 +248,7 @@ export default function DonPage() {
 
         {/* Montant */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-          <p className="text-sm font-semibold text-slate-600 mb-3">Montant du don</p>
+          <p className="text-sm font-semibold text-slate-600 mb-3">{gala.mensualiteEnabled ? "Montant mensuel du don" : "Montant du don"}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
             {MONTANTS.map(m => (
               <button key={m} type="button"
@@ -259,27 +260,34 @@ export default function DonPage() {
             ))}
           </div>
           <input type="number" value={montantLibre} onChange={e => { setMontantLibre(e.target.value); setMontant(""); }}
-            placeholder="Autre montant (€)" min="1"
+            placeholder={gala.mensualiteEnabled ? "Autre montant mensuel (€)" : "Autre montant (€)"} min="1"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
 
           {/* Mensualités */}
           {gala.mensualiteEnabled && mensualiteOpts.length > 0 && montantFinal && (
             <div className="pt-2 border-t border-slate-100">
-              <p className="text-xs font-semibold text-slate-500 mb-2">Payer en plusieurs fois</p>
+              <p className="text-xs font-semibold text-slate-500 mb-2">Durée de l'engagement</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button" onClick={() => setNbFois(null)}
                   className="py-2.5 rounded-xl text-xs font-semibold transition-all"
                   style={nbFois === null ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                  1 fois — {fmt(parseFloat(montantFinal))}
+                  Don unique — {fmt(montantMensuel)}
                 </button>
                 {mensualiteOpts.map(n => (
                   <button key={n} type="button" onClick={() => setNbFois(n)}
                     className="py-2.5 rounded-xl text-xs font-semibold transition-all"
                     style={nbFois === n ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                    {n}x — {fmt(parseFloat(montantFinal) / n)}/mois
+                    {fmt(montantMensuel)}/mois pendant {n} mois
                   </button>
                 ))}
               </div>
+              {nbFois && (
+                <div className="mt-3 rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
+                  <p className="text-xs text-slate-500">Engagement total</p>
+                  <p className="text-lg font-black text-slate-800">{fmt(totalEngagement)}</p>
+                  <p className="text-xs text-slate-400">{fmt(montantMensuel)} x {nbFois} mois</p>
+                </div>
+              )}
               {nbFois && gala.mensualiteDebutMode === "date" && gala.mensualiteDebutDate && (
                 <p className="text-xs text-slate-400 mt-2 text-center">
                   Premier prélèvement le {new Date(gala.mensualiteDebutDate).toLocaleDateString("fr-FR")}
@@ -440,8 +448,8 @@ export default function DonPage() {
             style={{ backgroundColor: gala.couleurPrimaire }}>
             {loading && <Loader2 size={18} className="animate-spin" />}
             {mode === "promesse"
-              ? `Enregistrer ma promesse de ${montantFinal ? fmt(parseFloat(montantFinal)) : "don"}`
-              : `Faire un don de ${montantFinal ? fmt(parseFloat(montantFinal)) : "…"}`}
+              ? `Enregistrer ma promesse de ${montantFinal ? fmt(totalEngagement) : "don"}`
+              : `Faire un don de ${montantFinal ? fmt(totalEngagement) : "…"}`}
           </button>
 
           <p className="text-center text-xs text-slate-400 pb-4">

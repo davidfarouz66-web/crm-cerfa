@@ -17,6 +17,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const origin = getPublicBaseUrl(req.headers.get("origin") || new URL(req.url).origin);
   const donationUrl = getPublicDonationUrl(id, origin);
+  const nbFois = Math.max(1, Number(body.nbFois || 1));
+  const montantTotal = parseFloat(body.montant);
+  const montantMensuel = body.montantMensuel ? parseFloat(body.montantMensuel) : montantTotal;
   const nomDonateur = body.type === "societe"
     ? body.raisonSociale
     : `${body.prenom || ""} ${body.nom || ""}`.trim();
@@ -63,7 +66,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           billingRequestId: link.billingRequest.id,
           billingRequestFlowId: link.flow.id,
           paymentId: link.billingRequest.links?.payment_request || null,
-          amount: parseFloat(body.montant),
+          amount: montantTotal,
           currency: "EUR",
           status: link.billingRequest.status || "pending",
           donorPayload: body as Prisma.InputJsonValue,
@@ -101,10 +104,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       price_data: {
         currency: "eur",
         product_data: {
-          name: `Don — ${gala.titre}`,
-          description: nomDonateur ? `De la part de : ${nomDonateur}` : undefined,
+          name: nbFois > 1 ? `Don ${nbFois} mois — ${gala.titre}` : `Don — ${gala.titre}`,
+          description: [
+            nbFois > 1 ? `${montantMensuel.toFixed(2)} € par mois pendant ${nbFois} mois` : null,
+            nomDonateur ? `De la part de : ${nomDonateur}` : null,
+          ].filter(Boolean).join(" · ") || undefined,
         },
-        unit_amount: Math.round(parseFloat(body.montant) * 100),
+        unit_amount: Math.round(montantTotal * 100),
       },
       quantity: 1,
     }],
@@ -113,6 +119,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     metadata: {
       galaId: id,
       montant: body.montant,
+      montantMensuel: body.montantMensuel || "",
+      nbFois: String(nbFois),
       nomAffiche: body.nomAffiche || "",
       anonyme: body.anonyme ? "true" : "false",
       message: body.message || "",
