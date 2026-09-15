@@ -30,15 +30,12 @@ export const authOptions: NextAuthOptions = {
           const result = await pool.query(
             'SELECT id, email, name, role, status, password, "tenantId" FROM "User" WHERE email = $1',
             [credentials.email]
-          );
-          await pool.end();
+          ).finally(() => pool.end());
 
           const user = result.rows[0];
-          console.log("[auth] user found:", !!user, "email:", credentials.email);
           if (!user) return null;
 
           const valid = await bcrypt.compare(credentials.password, user.password);
-          console.log("[auth] password valid:", valid);
           if (!valid) return null;
 
           if (user.status === "pending") throw new Error("PENDING");
