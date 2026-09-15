@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, CreditCard, Building2, User, FileText, CalendarClock } from "lucide-react";
+import { Loader2, CreditCard, Building2, User, FileText, CalendarClock, Heart, MessageCircle } from "lucide-react";
+
+interface Don {
+  id: string;
+  montant: number;
+  nomAffiche: string | null;
+  anonyme: boolean;
+  message: string | null;
+  createdAt: string;
+}
 
 interface Gala {
   id: string; titre: string; description: string | null; videoUrl: string | null;
@@ -12,6 +21,7 @@ interface Gala {
   mensualiteOptions: string; mensualiteDebutMode: string;
   mensualiteDebutDate: string | null;
   lieu: string | null; logoUrl: string | null;
+  dons: Don[];
 }
 
 function getVideoEmbedUrl(url: string): string | null {
@@ -40,6 +50,7 @@ export default function DonPage() {
   const [prenomContact, setPrenomContact] = useState("");
   const [nomContact, setNomContact] = useState("");
   const [nomAffiche, setNomAffiche] = useState("");
+  const [message, setMessage] = useState("");
   const [anonyme, setAnonyme] = useState(false);
   const [cerfaDemande, setCerfaDemande] = useState(false);
   const [email, setEmail] = useState("");
@@ -54,7 +65,20 @@ export default function DonPage() {
   const [checkoutError, setCheckoutError] = useState("");
 
   useEffect(() => {
-    fetch(`/api/gala/${id}`).then(r => r.json()).then(setGala);
+    let mounted = true;
+
+    async function loadGala() {
+      const res = await fetch(`/api/gala/${id}`);
+      const data = await res.json();
+      if (mounted) setGala(data);
+    }
+
+    loadGala();
+    const timer = window.setInterval(loadGala, 15000);
+    return () => {
+      mounted = false;
+      window.clearInterval(timer);
+    };
   }, [id]);
 
   const montantFinal = montant || montantLibre;
@@ -70,6 +94,7 @@ export default function DonPage() {
 
     const payload = {
       montant: montantFinal, nomAffiche: anonyme ? "" : nomAffiche, anonyme,
+      message,
       type: typePersonne,
       prenom: typePersonne === "particulier" ? prenom : prenomContact,
       nom: typePersonne === "particulier" ? nom : nomContact,
@@ -102,6 +127,7 @@ export default function DonPage() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         montant: montantFinal, nomAffiche: anonyme ? "" : nomAffiche, anonyme,
+        message,
         type: typePersonne,
         prenom: typePersonne === "particulier" ? prenom : prenomContact,
         nom: typePersonne === "particulier" ? nom : nomContact,
@@ -132,6 +158,8 @@ export default function DonPage() {
   );
 
   const pct = Math.min(100, Math.round((gala.totalCollecte / gala.objectif) * 100));
+  const donsRecents = (gala.dons || []).slice(0, 8);
+  const donateurLabel = (don: Don) => don.anonyme ? "Donateur anonyme" : (don.nomAffiche || "Donateur");
 
   return (
     <div className="min-h-screen bg-slate-50 pb-8">
@@ -172,10 +200,48 @@ export default function DonPage() {
           </div>
         )}
 
-        {/* Description */}
-        {gala.description && (
+        {/* Cause */}
+        {(gala.description || donsRecents.length > 0) && (
           <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{gala.description}</p>
+            {gala.description && (
+              <>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${gala.couleurPrimaire}18`, color: gala.couleurPrimaire }}>
+                    <Heart size={16} />
+                  </div>
+                  <h2 className="font-bold text-slate-800">La cause</h2>
+                </div>
+                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{gala.description}</p>
+              </>
+            )}
+
+            {donsRecents.length > 0 && (
+              <div className={gala.description ? "mt-5 pt-5 border-t border-slate-100" : ""}>
+                <div className="flex items-center justify-between gap-3 mb-3">
+                  <h2 className="font-bold text-slate-800 text-sm">Dons récents</h2>
+                  <span className="text-xs font-semibold text-slate-400">{donsRecents.length} affichés</span>
+                </div>
+                <div className="space-y-2">
+                  {donsRecents.map(don => (
+                    <div key={don.id} className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-slate-700 truncate">{donateurLabel(don)}</p>
+                          <p className="text-[11px] text-slate-400">{new Date(don.createdAt).toLocaleDateString("fr-FR")}</p>
+                        </div>
+                        <span className="text-sm font-black shrink-0" style={{ color: gala.couleurPrimaire }}>{fmt(don.montant)}</span>
+                      </div>
+                      {don.message && (
+                        <p className="text-xs text-slate-600 mt-2 leading-relaxed flex gap-1.5">
+                          <MessageCircle size={13} className="shrink-0 mt-0.5 text-slate-400" />
+                          <span>{don.message}</span>
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -296,6 +362,10 @@ export default function DonPage() {
               placeholder="Nom à afficher sur l'écran (optionnel)"
               className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={anonyme} />
+            <textarea value={message} onChange={e => setMessage(e.target.value)}
+              placeholder="Message de soutien affiché avec votre don (optionnel)"
+              rows={3}
+              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={anonyme} onChange={e => setAnonyme(e.target.checked)} className="w-4 h-4" />
               <span className="text-sm text-slate-600">Afficher anonymement sur l'écran</span>

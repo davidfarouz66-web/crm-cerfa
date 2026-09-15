@@ -6,6 +6,7 @@ import {
   Baby,
   CalendarDays,
   CheckCircle2,
+  DoorOpen,
   Gift,
   HeartHandshake,
   Link2,
@@ -435,6 +436,11 @@ export default function GalaPage({ initialCategory = "tous" }: { initialCategory
                   </div>
                 </div>
 
+                <a href={`/campagnes/${g.id}`}
+                  className="mb-3 flex items-center justify-center gap-2 bg-emerald-700 text-white px-4 py-3 rounded-lg text-sm font-bold hover:bg-emerald-800 transition-colors">
+                  <DoorOpen size={16} /> Entrer dans la campagne
+                </a>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
                   <a href={`/campagnes/${g.id}/ecran`} target="_blank" rel="noreferrer"
                     className="flex items-center justify-center gap-1.5 bg-slate-800 text-white px-3 py-2.5 rounded-lg text-xs font-semibold hover:bg-slate-700 transition-colors">
@@ -444,9 +450,9 @@ export default function GalaPage({ initialCategory = "tous" }: { initialCategory
                     className="flex items-center justify-center gap-1.5 bg-emerald-700 text-white px-3 py-2.5 rounded-lg text-xs font-semibold hover:bg-emerald-800 transition-colors">
                     <Smartphone size={13} /> Saisie staff
                   </a>
-                  <a href={`/campagnes/${g.id}`}
+                  <a href={`/campagnes/${g.id}/don`} target="_blank" rel="noreferrer"
                     className="flex items-center justify-center gap-1.5 bg-blue-600 text-white px-3 py-2.5 rounded-lg text-xs font-semibold hover:bg-blue-700 transition-colors">
-                    Modifier
+                    Page don
                   </a>
                 </div>
 

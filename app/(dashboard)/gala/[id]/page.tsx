@@ -251,9 +251,12 @@ export default function GalaDetailPage() {
                 onChange={e => e.target.files?.[0] && handleCoverUpload(e.target.files[0])} />
             </label>
           </div>
-          <textarea value={description} onChange={e => setDescription(e.target.value)}
-            placeholder="Description de votre association / campagne (affichée sur la page de don)"
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">Message de cause affiché sur la page de don</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)}
+            placeholder="Expliquez la cause, pourquoi cette collecte existe, à quoi l'argent va servir, et pourquoi il faut participer maintenant."
             rows={4} className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+          </div>
           <div>
             <label className="text-xs text-slate-500 mb-1 block">Vidéo de présentation (lien YouTube ou Vimeo)</label>
             <input value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
