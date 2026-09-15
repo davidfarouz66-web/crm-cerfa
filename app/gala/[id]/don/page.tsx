@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, CreditCard, Building2, User, FileText, CalendarClock, Heart, MessageCircle } from "lucide-react";
+import { Loader2, CreditCard, Building2, User, FileText, CalendarClock, Heart, MessageCircle, ShieldCheck } from "lucide-react";
 
 interface Don {
   id: string;
@@ -20,7 +20,7 @@ interface Gala {
   promesseEnabled: boolean; mensualiteEnabled: boolean;
   mensualiteOptions: string; mensualiteDebutMode: string;
   mensualiteDebutDate: string | null;
-  lieu: string | null; logoUrl: string | null;
+  lieu: string | null; logoUrl: string | null; typeProjet?: string | null;
   dons: Don[];
 }
 
@@ -34,6 +34,19 @@ function getVideoEmbedUrl(url: string): string | null {
 }
 
 const MONTANTS = [50, 100, 200, 500, 1000, 5000];
+
+const BACKGROUND_IMAGES: Record<string, string> = {
+  general: "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1800&q=85",
+  mariage: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1800&q=85",
+  orphelin: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1800&q=85",
+  panier_repas: "https://images.unsplash.com/photo-1593113630400-ea4288922497?auto=format&fit=crop&w=1800&q=85",
+  fetes: "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1800&q=85",
+  urgence: "https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&w=1800&q=85",
+};
+
+function getBackgroundImage(gala: Gala) {
+  return gala.logoUrl || BACKGROUND_IMAGES[gala.typeProjet || "general"] || BACKGROUND_IMAGES.general;
+}
 
 export default function DonPage() {
   const { id } = useParams<{ id: string }>();
@@ -161,18 +174,100 @@ export default function DonPage() {
   const pct = Math.min(100, Math.round((gala.totalCollecte / gala.objectif) * 100));
   const donsRecents = (gala.dons || []).slice(0, 8);
   const donateurLabel = (don: Don) => don.anonyme ? "Donateur anonyme" : (don.nomAffiche || "Donateur");
+  const backgroundImage = getBackgroundImage(gala);
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-8">
-      <div className="max-w-md mx-auto px-4 pt-6 space-y-4">
-        {gala.logoUrl && (
-          <div className="rounded-2xl overflow-hidden shadow-sm border border-slate-100 bg-white">
-            <img src={gala.logoUrl} alt={gala.titre} className="w-full aspect-video object-cover" />
-          </div>
-        )}
+    <div className="min-h-screen bg-slate-950 relative">
+      <div className="fixed inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${backgroundImage})` }} />
+      <div className="fixed inset-0 bg-slate-950/70" />
+      <div className="fixed inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.25),rgba(15,23,42,0.9))]" />
 
-        {/* Header campagne */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+      <div className="relative mx-auto max-w-7xl px-4 py-5 md:px-8 md:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(390px,0.75fr)] gap-5 lg:gap-6 items-start">
+          <section className="space-y-4 lg:sticky lg:top-6">
+            <div className="min-h-[46vh] md:min-h-[58vh] flex flex-col justify-end rounded-3xl overflow-hidden border border-white/15 bg-black/20 shadow-2xl">
+              <div className="p-5 md:p-8 text-white">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/20 px-3 py-1 text-xs font-semibold backdrop-blur">
+                  <Heart size={13} /> Campagne de dons
+                </div>
+                <h1 className="mt-4 text-3xl md:text-5xl font-black leading-tight">{gala.titre}</h1>
+                {gala.lieu && <p className="mt-2 text-sm md:text-base text-white/75">{gala.lieu}</p>}
+                <div className="mt-5 grid grid-cols-2 gap-3 max-w-xl">
+                  <div className="rounded-2xl bg-white/14 border border-white/15 p-4 backdrop-blur">
+                    <p className="text-xs text-white/65">Collecté</p>
+                    <p className="text-2xl font-black">{fmt(gala.totalCollecte)}</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/14 border border-white/15 p-4 backdrop-blur">
+                    <p className="text-xs text-white/65">Objectif</p>
+                    <p className="text-2xl font-black">{fmt(gala.objectif)}</p>
+                  </div>
+                </div>
+                <div className="mt-4 max-w-xl">
+                  <div className="flex justify-between text-xs text-white/70 mb-1">
+                    <span>{pct}% accompli</span>
+                    <span>{fmt(Math.max(gala.objectif - gala.totalCollecte, 0))} restant</span>
+                  </div>
+                  <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${Math.max(pct, 1)}%` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Cause */}
+            {(gala.description || donsRecents.length > 0) && (
+              <div className="bg-white/95 backdrop-blur rounded-3xl border border-white/40 shadow-xl p-5 md:p-6">
+                {gala.description && (
+                  <>
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: `${gala.couleurPrimaire}18`, color: gala.couleurPrimaire }}>
+                        <Heart size={17} />
+                      </div>
+                      <h2 className="font-bold text-slate-800">La cause</h2>
+                    </div>
+                    <p className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-line">{gala.description}</p>
+                  </>
+                )}
+
+                {donsRecents.length > 0 && (
+                  <div className={gala.description ? "mt-5 pt-5 border-t border-slate-100" : ""}>
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <h2 className="font-bold text-slate-800 text-sm">Dons récents</h2>
+                      <span className="text-xs font-semibold text-slate-400">{donsRecents.length} affichés</span>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {donsRecents.map(don => (
+                        <div key={don.id} className="rounded-xl bg-slate-50 border border-slate-100 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-slate-700 truncate">{donateurLabel(don)}</p>
+                              <p className="text-[11px] text-slate-400">{new Date(don.createdAt).toLocaleDateString("fr-FR")}</p>
+                            </div>
+                            <span className="text-sm font-black shrink-0" style={{ color: gala.couleurPrimaire }}>{fmt(don.montant)}</span>
+                          </div>
+                          {don.message && (
+                            <p className="text-xs text-slate-600 mt-2 leading-relaxed flex gap-1.5">
+                              <MessageCircle size={13} className="shrink-0 mt-0.5 text-slate-400" />
+                              <span>{don.message}</span>
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {gala.videoUrl && getVideoEmbedUrl(gala.videoUrl) && (
+              <div className="rounded-3xl overflow-hidden shadow-xl border border-white/20 bg-black" style={{ aspectRatio: "16/9" }}>
+                <iframe src={getVideoEmbedUrl(gala.videoUrl)!} className="w-full h-full" allowFullScreen />
+              </div>
+            )}
+          </section>
+
+          <section className="space-y-4">
+        <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: gala.couleurPrimaire }}>
               <span className="text-white font-bold text-lg">{gala.titre[0]}</span>
@@ -194,60 +289,8 @@ export default function DonPage() {
           </div>
         </div>
 
-        {/* Vidéo */}
-        {gala.videoUrl && getVideoEmbedUrl(gala.videoUrl) && (
-          <div className="rounded-2xl overflow-hidden shadow-sm" style={{ aspectRatio: "16/9" }}>
-            <iframe src={getVideoEmbedUrl(gala.videoUrl)!} className="w-full h-full" allowFullScreen />
-          </div>
-        )}
-
-        {/* Cause */}
-        {(gala.description || donsRecents.length > 0) && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
-            {gala.description && (
-              <>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: `${gala.couleurPrimaire}18`, color: gala.couleurPrimaire }}>
-                    <Heart size={16} />
-                  </div>
-                  <h2 className="font-bold text-slate-800">La cause</h2>
-                </div>
-                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{gala.description}</p>
-              </>
-            )}
-
-            {donsRecents.length > 0 && (
-              <div className={gala.description ? "mt-5 pt-5 border-t border-slate-100" : ""}>
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <h2 className="font-bold text-slate-800 text-sm">Dons récents</h2>
-                  <span className="text-xs font-semibold text-slate-400">{donsRecents.length} affichés</span>
-                </div>
-                <div className="space-y-2">
-                  {donsRecents.map(don => (
-                    <div key={don.id} className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-slate-700 truncate">{donateurLabel(don)}</p>
-                          <p className="text-[11px] text-slate-400">{new Date(don.createdAt).toLocaleDateString("fr-FR")}</p>
-                        </div>
-                        <span className="text-sm font-black shrink-0" style={{ color: gala.couleurPrimaire }}>{fmt(don.montant)}</span>
-                      </div>
-                      {don.message && (
-                        <p className="text-xs text-slate-600 mt-2 leading-relaxed flex gap-1.5">
-                          <MessageCircle size={13} className="shrink-0 mt-0.5 text-slate-400" />
-                          <span>{don.message}</span>
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Montant */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+        <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5">
           <p className="text-sm font-semibold text-slate-600 mb-3">{gala.mensualiteEnabled ? "Montant mensuel du don" : "Montant du don"}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
             {MONTANTS.map(m => (
@@ -304,7 +347,7 @@ export default function DonPage() {
 
         {/* Mode : payer maintenant ou promesse */}
         {gala.promesseEnabled && (
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5">
+          <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5">
             <p className="text-sm font-semibold text-slate-600 mb-3">Je souhaite…</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button type="button" onClick={() => setMode("payer")}
@@ -329,7 +372,7 @@ export default function DonPage() {
         <form onSubmit={mode === "payer" ? handlePayer : handlePromesse} className="space-y-4">
 
           {/* Infos personnelles */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+          <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
             <p className="text-sm font-semibold text-slate-600">Vos informations</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button type="button" onClick={() => setTypePersonne("particulier")}
@@ -382,7 +425,7 @@ export default function DonPage() {
 
           {/* Promesse : date + téléphone */}
           {mode === "promesse" && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+            <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
               <p className="text-sm font-semibold text-slate-600">Date de rappel</p>
               <input required type="date" value={dateRappel} onChange={e => setDateRappel(e.target.value)}
                 min={new Date().toISOString().split("T")[0]}
@@ -394,7 +437,7 @@ export default function DonPage() {
           )}
 
           {/* CERFA */}
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+          <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
             <label className="flex items-center gap-3 cursor-pointer">
               <input type="checkbox" checked={cerfaDemande} onChange={e => setCerfaDemande(e.target.checked)} className="w-4 h-4" />
               <div className="flex items-center gap-2 min-w-0">
@@ -421,7 +464,7 @@ export default function DonPage() {
 
           {/* Paiement (mode payer uniquement) */}
           {mode === "payer" && (
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 space-y-3">
+            <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
               <p className="text-sm font-semibold text-slate-600">Moyen de paiement</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button" onClick={() => setModePaiement("stripe")}
@@ -452,10 +495,12 @@ export default function DonPage() {
               : `Faire un don de ${montantFinal ? fmt(totalEngagement) : "…"}`}
           </button>
 
-          <p className="text-center text-xs text-slate-400 pb-4">
-            🔒 Paiement sécurisé — vos données ne sont jamais stockées sur nos serveurs
+          <p className="text-center text-xs text-white/75 pb-4 flex items-center justify-center gap-1.5">
+            <ShieldCheck size={13} /> Paiement sécurisé — vos données ne sont jamais stockées sur nos serveurs
           </p>
         </form>
+          </section>
+        </div>
       </div>
     </div>
   );
