@@ -9,12 +9,15 @@ export async function POST(req: NextRequest) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
 
-  const stripeKey = await prisma.settings.findUnique({ where: { key: "stripe_secret_key" } });
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const settings = await prisma.settings.findMany({
+    where: { key: { in: ["stripe_secret_key", "stripe_webhook_secret"] } },
+  });
+  const values = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+  const webhookSecret = values.stripe_webhook_secret || process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!stripeKey?.value) return NextResponse.json({ error: "Stripe non configuré" }, { status: 400 });
+  if (!values.stripe_secret_key) return NextResponse.json({ error: "Stripe non configuré" }, { status: 400 });
 
-  const stripe = new Stripe(stripeKey.value);
+  const stripe = new Stripe(values.stripe_secret_key);
 
   let event: Stripe.Event;
   try {

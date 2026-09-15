@@ -9,6 +9,7 @@ const KEYS = [
   "stripe_enabled",
   "stripe_public_key",
   "stripe_secret_key",
+  "stripe_webhook_secret",
   "gocardless_enabled",
 ];
 
@@ -28,6 +29,9 @@ export async function GET() {
   });
   const result: Record<string, string> = {};
   for (const s of settings) result[s.key] = s.value;
+  result.stripe_configured = String(!!result.stripe_secret_key);
+  result.stripe_webhook_configured = String(!!(result.stripe_webhook_secret || process.env.STRIPE_WEBHOOK_SECRET));
+  result.stripe_ready = String(result.stripe_enabled === "true" && !!result.stripe_secret_key);
   result.gocardless_connected = String(connection?.status === "connected");
   if (connection?.organisationId) result.gocardless_organisation_id = connection.organisationId;
   if (connection?.environment) result.gocardless_environment = connection.environment;

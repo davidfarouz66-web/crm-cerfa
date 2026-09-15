@@ -124,6 +124,9 @@ export default function ParametresPage() {
   const [stripeEnabled, setStripeEnabled] = useState(false);
   const [stripePublicKey, setStripePublicKey] = useState("");
   const [stripeSecretKey, setStripeSecretKey] = useState("");
+  const [stripeWebhookSecret, setStripeWebhookSecret] = useState("");
+  const [stripeConfigured, setStripeConfigured] = useState(false);
+  const [stripeWebhookConfigured, setStripeWebhookConfigured] = useState(false);
   const [gcEnabled, setGcEnabled] = useState(false);
   const [gcStatus, setGcStatus] = useState<GoCardlessStatus | null>(null);
   const [savingPaiements, setSavingPaiements] = useState(false);
@@ -139,6 +142,9 @@ export default function ParametresPage() {
       setStripeEnabled(d.stripe_enabled === "true");
       setStripePublicKey(d.stripe_public_key || "");
       setStripeSecretKey(d.stripe_secret_key || "");
+      setStripeWebhookSecret(d.stripe_webhook_secret || "");
+      setStripeConfigured(d.stripe_configured === "true");
+      setStripeWebhookConfigured(d.stripe_webhook_configured === "true");
       setGcEnabled(d.gocardless_enabled === "true");
     });
     fetch("/api/gocardless/status").then(r => r.json()).then(setGcStatus);
@@ -215,8 +221,16 @@ export default function ParametresPage() {
     await fetch("/api/reglages/paiements", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stripe_enabled: String(stripeEnabled), stripe_public_key: stripePublicKey, stripe_secret_key: stripeSecretKey, gocardless_enabled: String(gcEnabled) }),
+      body: JSON.stringify({
+        stripe_enabled: String(stripeEnabled),
+        stripe_public_key: stripePublicKey,
+        stripe_secret_key: stripeSecretKey,
+        stripe_webhook_secret: stripeWebhookSecret,
+        gocardless_enabled: String(gcEnabled),
+      }),
     });
+    setStripeConfigured(!!stripeSecretKey.trim());
+    setStripeWebhookConfigured(!!stripeWebhookSecret.trim());
     setSavingPaiements(false);
     setSavedPaiements("Paiements enregistrés."); setTimeout(() => setSavedPaiements(""), 3000);
   }
@@ -535,6 +549,15 @@ export default function ParametresPage() {
             </div>
             {stripeEnabled && (
               <div className="space-y-3 pt-2 border-t border-slate-100">
+                <div className={`rounded-xl px-3 py-2 text-xs border ${
+                  stripeConfigured
+                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                    : "bg-amber-50 border-amber-200 text-amber-700"
+                }`}>
+                  {stripeConfigured
+                    ? `Stripe prêt pour créer des paiements${stripeWebhookConfigured ? " · webhook configuré" : " · webhook à ajouter"}`
+                    : "Stripe est préparé dans le CRM. Il suffira d'ajouter les clés du compte Stripe pour lancer les paiements carte."}
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Clé publique</label>
                   <input type="text" value={stripePublicKey} onChange={e => setStripePublicKey(e.target.value)} placeholder="pk_live_..."
@@ -544,8 +567,15 @@ export default function ParametresPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-1">Clé secrète</label>
                   <SecretInput value={stripeSecretKey} onChange={setStripeSecretKey} placeholder="sk_live_..." />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Secret webhook</label>
+                  <SecretInput value={stripeWebhookSecret} onChange={setStripeWebhookSecret} placeholder="whsec_..." />
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-600">
+                  Webhook à créer dans Stripe : <span className="font-mono">https://www.trouma-pro.fr/api/webhooks/stripe</span>
+                </div>
                 <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
-                  Nécessite un compte Stripe avec SIRET et RIB professionnel.
+                  Tu peux activer ce bloc maintenant sans compte Stripe. Les paiements carte resteront en attente de connexion tant que la clé secrète n&apos;est pas renseignée.
                 </div>
               </div>
             )}

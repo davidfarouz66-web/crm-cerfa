@@ -78,10 +78,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
   }
 
-  const stripeKey = await prisma.settings.findUnique({ where: { key: "stripe_secret_key" } });
-  if (!stripeKey?.value) return NextResponse.json({ error: "Stripe non configuré" }, { status: 400 });
+  const stripeSettings = await prisma.settings.findMany({
+    where: { key: { in: ["stripe_enabled", "stripe_secret_key"] } },
+  });
+  const stripeValues = Object.fromEntries(stripeSettings.map((s) => [s.key, s.value]));
 
-  const stripe = new Stripe(stripeKey.value);
+  if (stripeValues.stripe_enabled !== "true") {
+    return NextResponse.json({ error: "Paiement par carte non activé" }, { status: 400 });
+  }
+  if (!stripeValues.stripe_secret_key) {
+    return NextResponse.json({
+      error: "Stripe est prêt dans le CRM, mais il manque encore la clé secrète du compte Stripe.",
+    }, { status: 400 });
+  }
+
+  const stripe = new Stripe(stripeValues.stripe_secret_key);
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
