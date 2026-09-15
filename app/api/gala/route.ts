@@ -27,6 +27,7 @@ export async function POST(req: Request) {
       objectif: parseFloat(body.objectif),
       dateEvenement: new Date(body.dateEvenement),
       lieu: body.lieu || null,
+      typeProjet: body.typeProjet || "general",
       langue: body.langue || "fr",
       couleurPrimaire: body.couleurPrimaire || "#1e3a8a",
       couleurSecondaire: body.couleurSecondaire || "#ffffff",

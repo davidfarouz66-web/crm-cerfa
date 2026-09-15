@@ -6,12 +6,21 @@ import { Loader2, Save, ArrowLeft, Monitor, Smartphone, QrCode, Link2, FileDown,
 
 interface Gala {
   id: string; titre: string; description: string | null; logoUrl: string | null; videoUrl: string | null;
-  objectif: number; dateEvenement: string; lieu: string | null;
+  objectif: number; dateEvenement: string; lieu: string | null; typeProjet: string;
   couleurPrimaire: string; couleurSecondaire: string;
   promesseEnabled: boolean; mensualiteEnabled: boolean;
   mensualiteOptions: string; mensualiteDebutMode: string;
   mensualiteDebutDate: string | null; actif: boolean; totalCollecte: number;
 }
+
+const PROJECT_TYPES = [
+  { value: "general", label: "Général" },
+  { value: "mariage", label: "Mariages" },
+  { value: "orphelin", label: "Orphelins" },
+  { value: "panier_repas", label: "Paniers repas" },
+  { value: "fetes", label: "Fêtes" },
+  { value: "urgence", label: "Urgences" },
+];
 
 const MENSUALITE_OPTIONS = [
   { value: "2", label: "2 fois" },
@@ -47,6 +56,7 @@ export default function GalaDetailPage() {
   const [objectif, setObjectif] = useState("");
   const [dateEvenement, setDateEvenement] = useState("");
   const [lieu, setLieu] = useState("");
+  const [typeProjet, setTypeProjet] = useState("general");
   const [couleurPrimaire, setCouleurPrimaire] = useState("#1e3a8a");
   const [couleurSecondaire, setCouleurSecondaire] = useState("#ffffff");
   const [actif, setActif] = useState(false);
@@ -77,6 +87,7 @@ export default function GalaDetailPage() {
         setObjectif(String(g.objectif));
         setDateEvenement(g.dateEvenement ? g.dateEvenement.slice(0, 16) : "");
         setLieu(g.lieu || "");
+        setTypeProjet(g.typeProjet || "general");
         setCouleurPrimaire(g.couleurPrimaire);
         setCouleurSecondaire(g.couleurSecondaire);
         setActif(g.actif);
@@ -103,7 +114,7 @@ export default function GalaDetailPage() {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        titre, description, logoUrl: campaignImageUrl, videoUrl, objectif, dateEvenement, lieu,
+        titre, description, logoUrl: campaignImageUrl, videoUrl, objectif, dateEvenement, lieu, typeProjet,
         couleurPrimaire, couleurSecondaire, actif,
         promesseEnabled, mensualiteEnabled,
         mensualiteOptions: mensualiteOptions.join(","),
@@ -263,6 +274,15 @@ export default function GalaDetailPage() {
           </div>
           <input value={lieu} onChange={e => setLieu(e.target.value)} placeholder="Lieu"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <div>
+            <label className="text-xs text-slate-500 mb-1 block">Type de projet</label>
+            <select value={typeProjet} onChange={e => setTypeProjet(e.target.value)}
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+              {PROJECT_TYPES.map(type => (
+                <option key={type.value} value={type.value}>{type.label}</option>
+              ))}
+            </select>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-xs text-slate-500 mb-1 block">Couleur principale</label>

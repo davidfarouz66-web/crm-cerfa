@@ -116,6 +116,7 @@ model Gala {
   objectif              Float
   dateEvenement         DateTime
   lieu                  String?
+  typeProjet            String    @default("general")
   langue                String    @default("fr")
   couleurPrimaire       String    @default("#1e3a8a")
   couleurSecondaire     String    @default("#ffffff")

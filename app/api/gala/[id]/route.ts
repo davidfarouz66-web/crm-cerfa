@@ -30,6 +30,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       objectif: body.objectif ? parseFloat(body.objectif) : undefined,
       dateEvenement: body.dateEvenement ? new Date(body.dateEvenement) : undefined,
       lieu: body.lieu || null,
+      typeProjet: body.typeProjet || undefined,
       langue: body.langue,
       couleurPrimaire: body.couleurPrimaire,
       couleurSecondaire: body.couleurSecondaire,
