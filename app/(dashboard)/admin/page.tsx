@@ -42,12 +42,21 @@ function StatusBadge({ status }: { status: string }) {
   return <span className="text-xs text-slate-400">{status}</span>;
 }
 
+const KPI_COLORS = {
+  emerald: { bg: "bg-emerald-100", text: "text-emerald-600" },
+  amber: { bg: "bg-amber-100", text: "text-amber-600" },
+  slate: { bg: "bg-slate-100", text: "text-slate-600" },
+  indigo: { bg: "bg-indigo-100", text: "text-indigo-600" },
+  blue: { bg: "bg-blue-100", text: "text-blue-600" },
+};
+
 export default function AdminPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
+  const [error, setError] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [consulting, setConsulting] = useState<string | null>(null);
 
@@ -55,8 +64,17 @@ export default function AdminPage() {
 
   function loadTenants() {
     fetch("/api/admin/tenants")
-      .then(r => r.json())
-      .then(d => { setTenants(d); setLoading(false); });
+      .then(async r => {
+        const d = await r.json();
+        if (!r.ok || !Array.isArray(d)) throw new Error(d?.error || "Chargement administration impossible");
+        return d as Tenant[];
+      })
+      .then(d => {
+        setTenants(d);
+        setError("");
+      })
+      .catch(e => setError(e instanceof Error ? e.message : "Chargement administration impossible"))
+      .finally(() => setLoading(false));
   }
 
   useEffect(() => {
@@ -67,24 +85,38 @@ export default function AdminPage() {
 
   async function consulter(tenantId: string, nom: string) {
     setConsulting(tenantId);
-    await fetch("/api/admin/view-as", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tenantId, nom }),
-    });
-    router.push("/dashboard");
-    router.refresh();
+    try {
+      const res = await fetch("/api/admin/view-as", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantId, nom }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Consultation impossible");
+      router.push("/dashboard");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Consultation impossible");
+      setConsulting(null);
+    }
   }
 
   async function setStatus(tenantId: string, newStatus: string) {
     setUpdating(tenantId);
-    await fetch("/api/admin/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tenantId, status: newStatus }),
-    });
-    setTenants(prev => prev.map(t => t.tenantId === tenantId ? { ...t, userStatus: newStatus } : t));
-    setUpdating(null);
+    try {
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tenantId, status: newStatus }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Mise à jour impossible");
+      setTenants(prev => prev.map(t => t.tenantId === tenantId ? { ...t, userStatus: newStatus } : t));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Mise à jour impossible");
+    } finally {
+      setUpdating(null);
+    }
   }
 
   const filtered = tenants.filter(t =>
@@ -103,6 +135,23 @@ export default function AdminPage() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white border border-red-200 rounded-xl p-5 max-w-md w-full">
+          <div className="flex items-center gap-2 text-red-700 font-semibold mb-2">
+            <AlertTriangle size={18} /> Administration indisponible
+          </div>
+          <p className="text-sm text-slate-600">{error}</p>
+          <button onClick={() => { setLoading(true); loadTenants(); }}
+            className="mt-4 w-full bg-slate-900 text-white rounded-lg py-2 text-sm font-semibold hover:bg-slate-800">
+            Réessayer
+          </button>
+        </div>
       </div>
     );
   }
@@ -131,15 +180,17 @@ export default function AdminPage() {
             { label: "En attente",    value: totalPending,             icon: Hourglass, color: totalPending > 0 ? "amber" : "slate" },
             { label: "CERFA émis",    value: totalCerfas,              icon: FileText,  color: "indigo" },
             { label: "Total dons",    value: formatMontant(totalDons), icon: Euro,      color: "blue" },
-          ].map(({ label, value, icon: Icon, color }) => (
+          ].map(({ label, value, icon: Icon, color }) => {
+            const classes = KPI_COLORS[color as keyof typeof KPI_COLORS];
+            return (
             <div key={label} className="bg-white rounded-xl border border-slate-100 p-3 shadow-sm">
-              <div className={`w-8 h-8 rounded-lg bg-${color}-100 flex items-center justify-center mb-2`}>
-                <Icon size={16} className={`text-${color}-600`} />
+              <div className={`w-8 h-8 rounded-lg ${classes.bg} flex items-center justify-center mb-2`}>
+                <Icon size={16} className={classes.text} />
               </div>
               <p className="text-lg font-bold text-slate-800 truncate">{value}</p>
               <p className="text-xs text-slate-500">{label}</p>
             </div>
-          ))}
+          );})}
         </div>
 
         {/* Recherche */}
