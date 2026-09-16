@@ -102,12 +102,17 @@ export default function DonPage() {
   const totalEngagement = nbFois ? montantMensuel * nbFois : montantMensuel;
   const stripeReady = !!gala?.paymentMethods?.stripeReady;
   const gocardlessReady = !!gala?.paymentMethods?.gocardlessReady;
+  const showInstallmentOptions = mode === "promesse" && gala?.mensualiteEnabled && mensualiteOpts.length > 0 && montantFinal;
 
   useEffect(() => {
     if (!gala) return;
     if (!stripeReady && gocardlessReady) setModePaiement("sepa");
     if (stripeReady && !gocardlessReady) setModePaiement("stripe");
   }, [gala, stripeReady, gocardlessReady]);
+
+  useEffect(() => {
+    if (mode === "payer" && nbFois) setNbFois(null);
+  }, [mode, nbFois]);
 
   async function handlePayer(e: React.FormEvent) {
     e.preventDefault();
@@ -300,7 +305,7 @@ export default function DonPage() {
 
         {/* Montant */}
         <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5">
-          <p className="text-sm font-semibold text-slate-600 mb-3">{gala.mensualiteEnabled ? "Montant mensuel du don" : "Montant du don"}</p>
+          <p className="text-sm font-semibold text-slate-600 mb-3">Montant du don</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
             {MONTANTS.map(m => (
               <button key={m} type="button"
@@ -312,13 +317,19 @@ export default function DonPage() {
             ))}
           </div>
           <input type="number" value={montantLibre} onChange={e => { setMontantLibre(e.target.value); setMontant(""); }}
-            placeholder={gala.mensualiteEnabled ? "Autre montant mensuel (€)" : "Autre montant (€)"} min="1"
+            placeholder="Autre montant (€)" min="1"
             className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
 
           {/* Mensualités */}
-          {gala.mensualiteEnabled && mensualiteOpts.length > 0 && montantFinal && (
+          {gala.mensualiteEnabled && mode === "payer" && (
+            <div className="mt-3 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-xs text-amber-800 leading-relaxed">
+              Le paiement en ligne est actuellement encaissé en don unique. Pour un engagement sur plusieurs mois, choisissez "Promesse de don" ; le vrai prélèvement mensuel GoCardless sera branché dans l'étape suivante.
+            </div>
+          )}
+
+          {showInstallmentOptions && (
             <div className="pt-2 border-t border-slate-100">
-              <p className="text-xs font-semibold text-slate-500 mb-2">Durée de l'engagement</p>
+              <p className="text-xs font-semibold text-slate-500 mb-2">Engagement sur plusieurs mois</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button type="button" onClick={() => setNbFois(null)}
                   className="py-2.5 rounded-xl text-xs font-semibold transition-all"

@@ -24,6 +24,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     ? body.raisonSociale
     : `${body.prenom || ""} ${body.nom || ""}`.trim();
 
+  if (nbFois > 1) {
+    return NextResponse.json({
+      error: "Le paiement en plusieurs fois n'est pas encore activé en ligne. Choisissez un don unique ou une promesse de don.",
+    }, { status: 400 });
+  }
+
   if (body.modePaiement === "sepa" || body.modePaiement === "gocardless") {
     const gcEnabled = await prisma.settings.findUnique({ where: { key: "gocardless_enabled" } });
     if (gcEnabled?.value !== "true") {

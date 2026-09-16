@@ -83,4 +83,37 @@ Une fois reconnecte au CRM, le statut doit afficher `Compte GoCardless connecte`
 
 - Ne mets jamais les secrets GoCardless dans le code.
 - Le webhook cree le don uniquement lorsque le paiement est confirme ou paye, afin d'eviter d'emettre un CERFA avant paiement reel.
-- Le paiement en plusieurs fois via GoCardless n'est pas encore active dans le code.
+- Le paiement en plusieurs fois via GoCardless n'est pas encore active dans le code. Le CRM bloque donc les paiements en ligne avec `nbFois > 1` pour eviter d'encaisser un engagement de 6 ou 12 mois en une seule fois.
+
+## Solution prevue pour les vrais paiements en plusieurs fois
+
+GoCardless gere les paiements en plusieurs fois avec un mandat bancaire puis un echeancier d'instalments. C'est le bon modele pour un don de `1200 EUR en 12 fois`, parce que le paiement a une fin claire.
+
+Flux cible :
+
+1. Le donateur choisit par exemple `100 EUR par mois pendant 12 mois`.
+2. Le CRM cree une Billing Request GoCardless avec une demande de mandat SEPA, pas une demande de paiement unique.
+3. Le donateur valide son mandat dans le flow GoCardless.
+4. Au webhook `billing_requests.fulfilled`, le CRM recupere le mandat et cree un instalment schedule GoCardless :
+   - montant total : engagement complet, par exemple `120000` centimes
+   - devise : `EUR`
+   - frequence : `monthly`
+   - montants : 12 lignes de `10000` centimes, ou les montants arrondis si la division n'est pas exacte
+5. A chaque paiement confirme par webhook GoCardless, le CRM cree un `DonGala` du montant mensuel et l'affiche dans la campagne.
+6. Le CERFA est genere uniquement pour les paiements reellement confirmes, jamais pour les mensualites futures.
+
+Donnees a ajouter en base pour cette etape :
+
+- type d'intention GoCardless : paiement unique ou echeancier
+- identifiant de mandat GoCardless
+- identifiant d'instalment schedule GoCardless
+- montant mensuel
+- nombre de mensualites prevues
+- nombre de mensualites confirmees
+- statut de l'echeancier : pending, active, completed, cancelled, failed
+
+Tant que cette etape n'est pas construite, les pages publiques doivent afficher :
+
+- GoCardless : don unique uniquement
+- Carte bancaire : don unique uniquement
+- Plusieurs mois : disponible en promesse de don, puis a remplacer par le vrai module d'abonnement
