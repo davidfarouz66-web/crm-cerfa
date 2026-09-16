@@ -1,5 +1,7 @@
 import PublicCampaignCategoryPage from "../_components/PublicCampaignCategoryPage";
 
+export const dynamic = "force-dynamic";
+
 export default function OrphelinsPublicPage() {
   return (
     <PublicCampaignCategoryPage
