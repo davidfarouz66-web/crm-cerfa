@@ -36,6 +36,12 @@ type DonorPayload = {
   ville?: string;
 };
 
+type GoCardlessApiErrorDetail = {
+  field?: string;
+  message?: string;
+  request_pointer?: string;
+};
+
 export function getGoCardlessEnvironment(): GoCardlessEnvironment {
   return process.env.GOCARDLESS_ENVIRONMENT === "sandbox" ? "sandbox" : "live";
 }
@@ -162,7 +168,19 @@ export async function gocardlessRequest<T>(
 
   const json = await res.json().catch(() => ({}));
   if (!res.ok) {
-    const message = json?.error?.message || json?.error?.errors?.[0]?.message || "Erreur GoCardless";
+    const details = Array.isArray(json?.error?.errors)
+      ? json.error.errors
+        .map((error: GoCardlessApiErrorDetail) => {
+          const field = error.field || error.request_pointer;
+          return [field, error.message].filter(Boolean).join(": ");
+        })
+        .filter(Boolean)
+      : [];
+    const message = [
+      json?.error?.message || "Erreur GoCardless",
+      ...details,
+    ].join(" — ");
+    console.error("[gocardless api]", path, res.status, JSON.stringify(json));
     throw new Error(message);
   }
 
@@ -200,6 +218,7 @@ export async function createGoCardlessPaymentLink(params: {
           },
           mandate_request: {
             currency: "EUR",
+            scheme: "sepa_core",
           },
         },
       },
