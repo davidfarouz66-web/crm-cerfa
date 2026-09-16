@@ -227,7 +227,6 @@ export async function createGoCardlessPaymentLink(params: {
 
   const prefilledCustomer: Record<string, string> = {
     country_code: "FR",
-    language: "fr",
   };
   if (params.payload.email) prefilledCustomer.email = params.payload.email;
   if (params.payload.adresse) prefilledCustomer.address_line1 = params.payload.adresse;
@@ -252,6 +251,7 @@ export async function createGoCardlessPaymentLink(params: {
       body: {
         billing_request_flows: {
           auto_fulfil: true,
+          language: "fr",
           redirect_uri: `${params.origin}/campagnes/${params.galaId}/don/merci?provider=gocardless`,
           exit_uri: `${params.origin}/campagnes/${params.galaId}/don`,
           prefilled_customer: prefilledCustomer,
