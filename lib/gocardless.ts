@@ -12,6 +12,7 @@ type GoCardlessBillingRequest = {
   status?: string;
   links?: {
     payment_request?: string;
+    payment_request_payment?: string;
   };
 };
 

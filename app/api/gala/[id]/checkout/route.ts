@@ -25,10 +25,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     : `${body.prenom || ""} ${body.nom || ""}`.trim();
 
   if (body.modePaiement === "sepa" || body.modePaiement === "gocardless") {
-    if (Number(body.nbFois || 1) > 1) {
-      return NextResponse.json({ error: "GoCardless en plusieurs fois n'est pas encore activé" }, { status: 400 });
-    }
-
     const gcEnabled = await prisma.settings.findUnique({ where: { key: "gocardless_enabled" } });
     if (gcEnabled?.value !== "true") {
       return NextResponse.json({ error: "GoCardless non activé" }, { status: 400 });
@@ -65,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
           galaId: id,
           billingRequestId: link.billingRequest.id,
           billingRequestFlowId: link.flow.id,
-          paymentId: link.billingRequest.links?.payment_request || null,
+          paymentId: link.billingRequest.links?.payment_request_payment || link.billingRequest.links?.payment_request || null,
           amount: montantTotal,
           currency: "EUR",
           status: link.billingRequest.status || "pending",

@@ -478,6 +478,11 @@ export default function DonPage() {
                   <Building2 size={15} /> Paiement bancaire
                 </button>
               </div>
+              {modePaiement === "sepa" && nbFois && (
+                <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-blue-700">
+                  Le paiement bancaire GoCardless encaisse l'engagement total de {fmt(totalEngagement)} en une fois.
+                </div>
+              )}
               {checkoutError && (
                 <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-xs text-red-700">
                   {checkoutError}
