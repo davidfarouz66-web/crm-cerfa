@@ -198,6 +198,9 @@ export async function createGoCardlessPaymentLink(params: {
               gala_id: params.galaId,
             },
           },
+          mandate_request: {
+            currency: "EUR",
+          },
         },
       },
     },
