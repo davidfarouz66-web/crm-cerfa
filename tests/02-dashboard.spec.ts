@@ -9,15 +9,17 @@ test.describe("Dashboard", () => {
   test("affiche les 4 cartes de statistiques", async ({ page }) => {
     await page.goto("/dashboard");
     // Cartes : Total CERFA, Dons de l'année, CERFA de l'année, Donateurs
-    await expect(page.getByText(/reçu|cerfa/i).first()).toBeVisible();
-    await expect(page.getByText(/donateur/i).first()).toBeVisible();
-    await expect(page.getByText(/don|euro|€/i).first()).toBeVisible();
+    const main = page.locator("main");
+    await expect(main.getByText(/Total CERFA|CERFA 20/i).first()).toBeVisible();
+    await expect(main.getByText(/donateur/i).first()).toBeVisible();
+    await expect(main.getByText(/Dons 20|€/i).first()).toBeVisible();
   });
 
   test("affiche le graphique mensuel", async ({ page }) => {
     await page.goto("/dashboard");
     // Recharts génère un SVG
-    await expect(page.locator("svg").first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText(/Dons par mois/i)).toBeVisible({ timeout: 8000 });
+    await expect(page.locator(".recharts-wrapper svg")).toBeVisible({ timeout: 8000 });
   });
 
   test("affiche la liste des derniers CERFA", async ({ page }) => {

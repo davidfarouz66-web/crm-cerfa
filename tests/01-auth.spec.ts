@@ -4,7 +4,7 @@ import { login, TEST_EMAIL, TEST_PASSWORD } from "./helpers/auth";
 test.describe("Authentification", () => {
   test("affiche la page de connexion", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByText("Trouma-Pro")).toBeVisible();
+    await expect(page.getByText(/CRM Cerfa|Trouma-Pro/)).toBeVisible();
     await expect(page.getByText("Gestion des dons & reçus fiscaux")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();
@@ -47,6 +47,10 @@ test.describe("Authentification", () => {
     const signOut = page.getByRole("button", { name: /déconnex|sign out|logout/i });
     if (await signOut.isVisible()) {
       await signOut.click();
+      await expect(page).toHaveURL(/login/);
+    } else if (await page.locator("nav.mobile-nav").isVisible()) {
+      await page.locator("nav.mobile-nav button").last().click();
+      await page.locator(".fixed.bottom-14").getByText(/déconnexion/i).click();
       await expect(page).toHaveURL(/login/);
     } else {
       // Cherche dans un dropdown utilisateur

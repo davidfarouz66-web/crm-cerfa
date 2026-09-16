@@ -111,7 +111,7 @@ test.describe("Mobile — Mise en page", () => {
   test("la page paramètres s'affiche sur mobile", async ({ page }) => {
     await page.goto("/parametres");
     await expect(page.getByRole("heading", { name: /association|paramètre/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Enregistrer les modifications" })).toBeVisible({ timeout: 6000 });
+    await expect(page.getByRole("button", { name: /enregistrer/i })).toBeVisible({ timeout: 6000 });
   });
 
   test("la page réglages s'affiche sur mobile", async ({ page }) => {
@@ -123,7 +123,7 @@ test.describe("Mobile — Mise en page", () => {
 test.describe("Mobile — Authentification", () => {
   test("la page de connexion s'affiche correctement sur mobile", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByText("Trouma-Pro")).toBeVisible();
+    await expect(page.getByText(/CRM Cerfa|Trouma-Pro/)).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();
