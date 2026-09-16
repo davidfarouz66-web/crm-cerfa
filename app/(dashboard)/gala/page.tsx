@@ -23,6 +23,7 @@ import {
   Users,
   WalletCards,
 } from "lucide-react";
+import { CANONICAL_PUBLIC_ORIGIN } from "@/lib/public-url";
 
 interface Gala {
   id: string;
@@ -202,9 +203,7 @@ export default function GalaPage({ initialCategory = "tous" }: { initialCategory
     setTimeout(() => setCopiedId(null), 2000);
   }
 
-  const publicOrigin =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ||
-    (typeof window !== "undefined" ? window.location.origin : "");
+  const publicOrigin = CANONICAL_PUBLIC_ORIGIN;
 
   const stats = useMemo(() => ({
     count: galas.length,

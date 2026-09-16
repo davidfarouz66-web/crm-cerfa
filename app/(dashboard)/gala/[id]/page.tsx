@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, Save, ArrowLeft, Monitor, Smartphone, QrCode, Link2, FileDown, ImageIcon, Upload, X } from "lucide-react";
+import { CANONICAL_PUBLIC_ORIGIN } from "@/lib/public-url";
 
 interface Gala {
   id: string; titre: string; description: string | null; logoUrl: string | null; videoUrl: string | null;
@@ -152,9 +153,7 @@ export default function GalaDetailPage() {
     </div>
   ) : <div className="flex justify-center py-24"><div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>;
 
-  const publicOrigin =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/+$/, "") ||
-    (typeof window !== "undefined" ? window.location.origin : "");
+  const publicOrigin = CANONICAL_PUBLIC_ORIGIN;
   const donUrl = `${publicOrigin}/campagnes/${id}/don`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(donUrl)}`;
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);

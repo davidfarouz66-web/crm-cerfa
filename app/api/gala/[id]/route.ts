@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireTenant } from "@/lib/tenant";
+import { getPublicDonationUrl } from "@/lib/public-url";
 
 export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,7 +13,26 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     },
   });
   if (!gala) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
-  return NextResponse.json(gala);
+
+  const [settings, gcConnection] = await Promise.all([
+    prisma.settings.findMany({
+      where: { key: { in: ["stripe_enabled", "stripe_secret_key", "gocardless_enabled"] } },
+    }),
+    prisma.goCardlessConnection.findUnique({
+      where: { tenantId: gala.tenantId },
+      select: { status: true },
+    }).catch(() => null),
+  ]);
+  const values = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+
+  return NextResponse.json({
+    ...gala,
+    publicDonationUrl: getPublicDonationUrl(id),
+    paymentMethods: {
+      stripeReady: values.stripe_enabled === "true" && !!values.stripe_secret_key,
+      gocardlessReady: values.gocardless_enabled === "true" && (gcConnection?.status === "connected" || !!process.env.GOCARDLESS_ACCESS_TOKEN),
+    },
+  });
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {

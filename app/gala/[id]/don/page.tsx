@@ -21,6 +21,7 @@ interface Gala {
   mensualiteOptions: string; mensualiteDebutMode: string;
   mensualiteDebutDate: string | null;
   lieu: string | null; logoUrl: string | null; typeProjet?: string | null;
+  paymentMethods?: { stripeReady?: boolean; gocardlessReady?: boolean };
   dons: Don[];
 }
 
@@ -99,6 +100,14 @@ export default function DonPage() {
   const mensualiteOpts = gala?.mensualiteOptions?.split(",").map(Number).filter(Boolean) || [];
   const montantMensuel = montantFinal ? parseFloat(montantFinal) : 0;
   const totalEngagement = nbFois ? montantMensuel * nbFois : montantMensuel;
+  const stripeReady = !!gala?.paymentMethods?.stripeReady;
+  const gocardlessReady = !!gala?.paymentMethods?.gocardlessReady;
+
+  useEffect(() => {
+    if (!gala) return;
+    if (!stripeReady && gocardlessReady) setModePaiement("sepa");
+    if (stripeReady && !gocardlessReady) setModePaiement("stripe");
+  }, [gala, stripeReady, gocardlessReady]);
 
   async function handlePayer(e: React.FormEvent) {
     e.preventDefault();
@@ -466,18 +475,28 @@ export default function DonPage() {
           {mode === "payer" && (
             <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
               <p className="text-sm font-semibold text-slate-600">Moyen de paiement</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button type="button" onClick={() => setModePaiement("stripe")}
-                  className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                  style={modePaiement === "stripe" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                  <CreditCard size={15} /> Carte bancaire
-                </button>
-                <button type="button" onClick={() => setModePaiement("sepa")}
-                  className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                  style={modePaiement === "sepa" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                  <Building2 size={15} /> Paiement bancaire
-                </button>
-              </div>
+              {stripeReady || gocardlessReady ? (
+                <div className={`grid grid-cols-1 ${stripeReady && gocardlessReady ? "sm:grid-cols-2" : ""} gap-2`}>
+                  {stripeReady && (
+                    <button type="button" onClick={() => setModePaiement("stripe")}
+                      className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+                      style={modePaiement === "stripe" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
+                      <CreditCard size={15} /> Carte bancaire
+                    </button>
+                  )}
+                  {gocardlessReady && (
+                    <button type="button" onClick={() => setModePaiement("sepa")}
+                      className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+                      style={modePaiement === "sepa" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
+                      <Building2 size={15} /> Paiement bancaire
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 text-xs text-amber-700">
+                  Aucun moyen de paiement en ligne n'est activé pour cette campagne.
+                </div>
+              )}
               {modePaiement === "sepa" && nbFois && (
                 <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-blue-700">
                   Le paiement bancaire GoCardless encaisse l'engagement total de {fmt(totalEngagement)} en une fois.
@@ -491,7 +510,7 @@ export default function DonPage() {
             </div>
           )}
 
-          <button type="submit" disabled={loading || !montantFinal || parseFloat(montantFinal) <= 0}
+          <button type="submit" disabled={loading || !montantFinal || parseFloat(montantFinal) <= 0 || (mode === "payer" && !stripeReady && !gocardlessReady)}
             className="w-full py-4 rounded-2xl font-bold text-lg text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
             style={{ backgroundColor: gala.couleurPrimaire }}>
             {loading && <Loader2 size={18} className="animate-spin" />}
