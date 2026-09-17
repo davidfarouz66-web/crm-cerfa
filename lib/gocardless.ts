@@ -211,7 +211,7 @@ export async function createGoCardlessPaymentLink(params: {
             amount,
             currency: "EUR",
             scheme: "sepa_instant_credit_transfer",
-            description: `Don - ${params.galaTitre}`.slice(0, 255),
+            description: `Trouma Pro - Don - ${params.galaTitre}`.slice(0, 255),
             metadata: {
               tenant_id: params.tenantId,
               gala_id: params.galaId,

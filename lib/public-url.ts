@@ -1,14 +1,7 @@
 export const CANONICAL_PUBLIC_ORIGIN = "https://www.trouma-pro.fr";
 
 export function getPublicBaseUrl(origin?: string | null) {
-  const configured =
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXTAUTH_URL ||
-    CANONICAL_PUBLIC_ORIGIN ||
-    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
-    process.env.VERCEL_URL ||
-    origin;
-
+  const configured = CANONICAL_PUBLIC_ORIGIN;
   const raw = configured || CANONICAL_PUBLIC_ORIGIN;
   const url = raw.startsWith("http") ? raw : `https://${raw}`;
   const normalized = url.replace(/\/+$/, "");
