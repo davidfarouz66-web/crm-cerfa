@@ -499,7 +499,7 @@ export default function DonPage() {
                     <button type="button" onClick={() => setModePaiement("sepa")}
                       className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
                       style={modePaiement === "sepa" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                      <Building2 size={15} /> Paiement bancaire
+                      <Building2 size={15} /> Pay by Bank
                     </button>
                   )}
                 </div>
@@ -508,9 +508,9 @@ export default function DonPage() {
                   Aucun moyen de paiement en ligne n'est activé pour cette campagne.
                 </div>
               )}
-              {modePaiement === "sepa" && nbFois && (
+              {modePaiement === "sepa" && (
                 <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-blue-700">
-                  Le paiement bancaire GoCardless encaisse l'engagement total de {fmt(totalEngagement)} en une fois.
+                  Le donateur valide le paiement directement dans son application bancaire. Aucun mandat SEPA n'est cree.
                 </div>
               )}
               {checkoutError && (

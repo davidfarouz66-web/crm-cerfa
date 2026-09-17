@@ -210,15 +210,12 @@ export async function createGoCardlessPaymentLink(params: {
           payment_request: {
             amount,
             currency: "EUR",
+            scheme: "sepa_instant_credit_transfer",
             description: `Don - ${params.galaTitre}`.slice(0, 255),
             metadata: {
               tenant_id: params.tenantId,
               gala_id: params.galaId,
             },
-          },
-          mandate_request: {
-            currency: "EUR",
-            scheme: "sepa_core",
           },
         },
       },
