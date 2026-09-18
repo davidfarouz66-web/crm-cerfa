@@ -2,13 +2,13 @@ import { prisma } from "./db";
 import bcrypt from "bcryptjs";
 
 async function seed() {
-  const existing = await prisma.user.findUnique({ where: { email: "admin@crm-cerfa.fr" } });
+  const existing = await prisma.user.findUnique({ where: { email: "admin@trouma-pro.fr" } });
   if (!existing) {
     const hash = await bcrypt.hash("Admin1234!", 10);
     await prisma.user.create({
-      data: { email: "admin@crm-cerfa.fr", password: hash, name: "Administrateur", role: "admin" },
+      data: { email: "admin@trouma-pro.fr", password: hash, name: "Administrateur", role: "admin" },
     });
-    console.log("✅ Utilisateur admin créé : admin@crm-cerfa.fr / Admin1234!");
+    console.log("Utilisateur admin Trouma Pro créé.");
   }
 
   const assoc = await prisma.association.findFirst();

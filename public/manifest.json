@@ -1,6 +1,6 @@
 {
-  "name": "CRM CERFA",
-  "short_name": "CRM CERFA",
+  "name": "Trouma Pro",
+  "short_name": "Trouma Pro",
   "description": "Gestion des dons et reçus fiscaux",
   "start_url": "/dashboard",
   "display": "standalone",

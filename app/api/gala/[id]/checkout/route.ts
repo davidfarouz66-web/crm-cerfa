@@ -31,7 +31,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   if (body.modePaiement === "sepa" || body.modePaiement === "gocardless") {
-    const gcEnabled = await prisma.settings.findUnique({ where: { key: "gocardless_enabled" } });
+    const gcEnabled = await prisma.settings.findUnique({
+      where: { tenantId_key: { tenantId: gala.tenantId, key: "gocardless_enabled" } },
+    });
     if (gcEnabled?.value !== "true") {
       return NextResponse.json({ error: "GoCardless non activé" }, { status: 400 });
     }
@@ -84,7 +86,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }
 
   const stripeSettings = await prisma.settings.findMany({
-    where: { key: { in: ["stripe_enabled", "stripe_secret_key"] } },
+    where: {
+      tenantId: gala.tenantId,
+      key: { in: ["stripe_enabled", "stripe_secret_key"] },
+    },
   });
   const stripeValues = Object.fromEntries(stripeSettings.map((s) => [s.key, s.value]));
 
@@ -119,6 +124,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     success_url: `${donationUrl}/merci?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: donationUrl,
     metadata: {
+      tenantId: gala.tenantId,
       galaId: id,
       montant: body.montant,
       montantMensuel: body.montantMensuel || "",

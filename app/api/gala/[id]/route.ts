@@ -16,7 +16,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const [settings, gcConnection] = await Promise.all([
     prisma.settings.findMany({
-      where: { key: { in: ["stripe_enabled", "stripe_secret_key", "gocardless_enabled"] } },
+      where: {
+        tenantId: gala.tenantId,
+        key: { in: ["stripe_enabled", "stripe_secret_key", "gocardless_enabled"] },
+      },
     }),
     prisma.goCardlessConnection.findUnique({
       where: { tenantId: gala.tenantId },

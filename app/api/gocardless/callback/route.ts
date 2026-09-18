@@ -53,9 +53,9 @@ export async function GET(req: NextRequest) {
     });
 
     await prisma.settings.upsert({
-      where: { key: "gocardless_enabled" },
+      where: { tenantId_key: { tenantId: t.tenantId, key: "gocardless_enabled" } },
       update: { value: "true" },
-      create: { key: "gocardless_enabled", value: "true" },
+      create: { tenantId: t.tenantId, key: "gocardless_enabled", value: "true" },
     });
 
     return NextResponse.redirect(`${origin}/parametres?tab=paiements&gocardless=connected`);

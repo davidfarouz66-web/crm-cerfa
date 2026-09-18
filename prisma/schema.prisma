@@ -222,9 +222,13 @@ model PromesseDon {
 
 model Settings {
   id        Int      @id @default(autoincrement())
-  key       String   @unique
+  tenantId  String   @default("default")
+  key       String
   value     String
   updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
 }
 
 model AuditLog {

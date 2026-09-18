@@ -19,7 +19,9 @@ export async function GET() {
   const t = await requireTenant();
   if (t instanceof NextResponse) return t;
 
-  const settings = await prisma.settings.findMany({ where: { key: { in: KEYS } } });
+  const settings = await prisma.settings.findMany({
+    where: { tenantId: t.tenantId, key: { in: KEYS } },
+  });
   const connection = await prisma.goCardlessConnection.findUnique({
     where: { tenantId: t.tenantId },
     select: { organisationId: true, environment: true, status: true, connectedAt: true },
@@ -52,9 +54,9 @@ export async function PUT(req: Request) {
   for (const key of KEYS) {
     if (key in body) {
       await prisma.settings.upsert({
-        where: { key },
+        where: { tenantId_key: { tenantId: t.tenantId, key } },
         update: { value: String(body[key]) },
-        create: { key, value: String(body[key]) },
+        create: { tenantId: t.tenantId, key, value: String(body[key]) },
       });
     }
   }

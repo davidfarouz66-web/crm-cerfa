@@ -5,20 +5,20 @@ import OpenInBrowser from "@/components/OpenInBrowser";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.trouma-pro.fr"),
-  title: "CRM Cerfa — Gestion des dons",
+  title: "Trouma Pro — Gestion des dons",
   description: "CRM de gestion des donateurs et génération de reçus fiscaux CERFA",
   manifest: "/manifest.json",
   openGraph: {
-    title: "CRM Cerfa — Gestion des dons",
+    title: "Trouma Pro — Gestion des dons",
     description: "Gérez vos donateurs et générez vos reçus fiscaux CERFA en quelques clics.",
     url: "https://www.trouma-pro.fr",
-    siteName: "CRM Cerfa",
+    siteName: "Trouma Pro",
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "CRM Cerfa — Gestion des dons & CERFA",
+        alt: "Trouma Pro — Gestion des dons & CERFA",
       },
     ],
     locale: "fr_FR",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CRM Cerfa — Gestion des dons",
+    title: "Trouma Pro — Gestion des dons",
     description: "Gérez vos donateurs et générez vos reçus fiscaux CERFA en quelques clics.",
     images: ["/opengraph-image"],
   },

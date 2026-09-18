@@ -12,21 +12,33 @@ export async function POST(req: NextRequest) {
   const settings = await prisma.settings.findMany({
     where: { key: { in: ["stripe_secret_key", "stripe_webhook_secret"] } },
   });
-  const values = Object.fromEntries(settings.map((s) => [s.key, s.value]));
-  const webhookSecret = values.stripe_webhook_secret || process.env.STRIPE_WEBHOOK_SECRET;
+  if (!sig) return NextResponse.json({ error: "Signature Stripe manquante" }, { status: 400 });
 
-  if (!values.stripe_secret_key) return NextResponse.json({ error: "Stripe non configuré" }, { status: 400 });
+  const byTenant = new Map<string, Record<string, string>>();
+  for (const setting of settings) {
+    const values = byTenant.get(setting.tenantId) || {};
+    values[setting.key] = setting.value;
+    byTenant.set(setting.tenantId, values);
+  }
 
-  const stripe = new Stripe(values.stripe_secret_key);
-
-  let event: Stripe.Event;
-  try {
-    if (webhookSecret && sig) {
+  let event: Stripe.Event | null = null;
+  let verifiedTenantId = "";
+  let lastError: unknown;
+  for (const [tenantId, values] of byTenant) {
+    const webhookSecret = values.stripe_webhook_secret;
+    if (!values.stripe_secret_key || !webhookSecret) continue;
+    try {
+      const stripe = new Stripe(values.stripe_secret_key);
       event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-    } else {
-      event = JSON.parse(body);
+      verifiedTenantId = tenantId;
+      break;
+    } catch (error) {
+      lastError = error;
     }
-  } catch {
+  }
+
+  if (!verifiedTenantId || !event) {
+    console.error("[stripe webhook verification]", lastError);
     return NextResponse.json({ error: "Webhook invalide" }, { status: 400 });
   }
 
@@ -34,7 +46,7 @@ export async function POST(req: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session;
     const meta = session.metadata || {};
 
-    if (meta.galaId) {
+    if (meta.galaId && (!meta.tenantId || meta.tenantId === verifiedTenantId)) {
       const montant = parseFloat(meta.montant || "0");
       await recordPaidGalaDonation({
         galaId: meta.galaId,
