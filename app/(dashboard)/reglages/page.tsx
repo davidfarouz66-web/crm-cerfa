@@ -56,7 +56,6 @@ export default function ReglagesPage() {
   const [stripePublicKey, setStripePublicKey] = useState("");
   const [stripeSecretKey, setStripeSecretKey] = useState("");
   const [gcEnabled, setGcEnabled] = useState(false);
-  const [gcToken, setGcToken] = useState("");
   const [loadingPaiements, setLoadingPaiements] = useState(false);
   const [successPaiements, setSuccessPaiements] = useState("");
   const [errorPaiements, setErrorPaiements] = useState("");
@@ -65,9 +64,8 @@ export default function ReglagesPage() {
     fetch("/api/reglages/paiements").then(r => r.json()).then(d => {
       setStripeEnabled(d.stripe_enabled === "true");
       setStripePublicKey(d.stripe_public_key || "");
-      setStripeSecretKey(d.stripe_secret_key || "");
+      setStripeSecretKey("");
       setGcEnabled(d.gocardless_enabled === "true");
-      setGcToken(d.gocardless_access_token || "");
     });
   }, []);
 
@@ -125,7 +123,6 @@ export default function ReglagesPage() {
         stripe_public_key: stripePublicKey,
         stripe_secret_key: stripeSecretKey,
         gocardless_enabled: String(gcEnabled),
-        gocardless_access_token: gcToken,
       }),
     });
     setLoadingPaiements(false);
@@ -266,12 +263,8 @@ export default function ReglagesPage() {
 
           {gcEnabled && (
             <div className="space-y-3 pt-2 border-t border-slate-100">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Token d'accès</label>
-                <SecretInput value={gcToken} onChange={setGcToken} placeholder="live_..." />
-              </div>
               <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-xs text-amber-700">
-                Nécessite un compte GoCardless avec SIRET et RIB professionnel.
+                La connexion GoCardless se gère depuis Paramètres &gt; Paiements. Le token n&apos;est jamais affiché dans le navigateur.
               </div>
             </div>
           )}

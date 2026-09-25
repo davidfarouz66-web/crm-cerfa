@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { createGoCardlessPaymentLink } from "@/lib/gocardless";
 import { getPublicBaseUrl, getPublicDonationUrl } from "@/lib/public-url";
 import Stripe from "stripe";
+import { decryptSecret, encryptSecret, isEncryptedSecret } from "@/lib/secret-store";
 
 export const dynamic = "force-dynamic";
 
@@ -45,10 +46,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return null;
     });
     const goCardlessAccessToken = connection?.status === "connected"
-      ? connection.accessToken
+      ? decryptSecret(connection.accessToken)
       : process.env.GOCARDLESS_ACCESS_TOKEN;
     if (!goCardlessAccessToken) {
       return NextResponse.json({ error: "Le compte GoCardless de l'association n'est pas connecté" }, { status: 400 });
+    }
+
+    if (connection?.accessToken && !isEncryptedSecret(connection.accessToken)) {
+      await prisma.goCardlessConnection.update({
+        where: { tenantId: gala.tenantId },
+        data: { accessToken: encryptSecret(connection.accessToken) },
+      });
     }
 
     try {
@@ -102,7 +110,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }, { status: 400 });
   }
 
-  const stripe = new Stripe(stripeValues.stripe_secret_key);
+  const stripeSecretKey = decryptSecret(stripeValues.stripe_secret_key);
+  if (!isEncryptedSecret(stripeValues.stripe_secret_key)) {
+    await prisma.settings.update({
+      where: { tenantId_key: { tenantId: gala.tenantId, key: "stripe_secret_key" } },
+      data: { value: encryptSecret(stripeValues.stripe_secret_key) },
+    });
+  }
+  const stripe = new Stripe(stripeSecretKey);
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],

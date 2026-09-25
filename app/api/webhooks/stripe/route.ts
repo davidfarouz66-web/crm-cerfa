@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/db";
 import { recordPaidGalaDonation } from "@/lib/gala-donations";
+import { decryptSecret, encryptSecret, isEncryptedSecret } from "@/lib/secret-store";
 
 export const dynamic = "force-dynamic";
 
@@ -28,9 +29,18 @@ export async function POST(req: NextRequest) {
     const webhookSecret = values.stripe_webhook_secret;
     if (!values.stripe_secret_key || !webhookSecret) continue;
     try {
-      const stripe = new Stripe(values.stripe_secret_key);
-      event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+      const stripe = new Stripe(decryptSecret(values.stripe_secret_key));
+      event = stripe.webhooks.constructEvent(body, sig, decryptSecret(webhookSecret));
       verifiedTenantId = tenantId;
+      const plaintextSettings = settings.filter(
+        (s) => s.tenantId === tenantId && s.value && !isEncryptedSecret(s.value),
+      );
+      if (plaintextSettings.length) {
+        await prisma.$transaction(plaintextSettings.map((s) => prisma.settings.update({
+          where: { id: s.id },
+          data: { value: encryptSecret(s.value) },
+        })));
+      }
       break;
     } catch (error) {
       lastError = error;

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { exchangeGoCardlessCode, getGoCardlessEnvironment, verifyGoCardlessState } from "@/lib/gocardless";
 import { getPublicBaseUrl } from "@/lib/public-url";
 import { requireTenant, rejectIfReadOnly } from "@/lib/tenant";
+import { encryptSecret } from "@/lib/secret-store";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +38,7 @@ export async function GET(req: NextRequest) {
     await prisma.goCardlessConnection.upsert({
       where: { tenantId: t.tenantId },
       update: {
-        accessToken: token.access_token,
+        accessToken: encryptSecret(token.access_token),
         organisationId: token.organisation_id || null,
         environment: getGoCardlessEnvironment(),
         status: "connected",
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
       },
       create: {
         tenantId: t.tenantId,
-        accessToken: token.access_token,
+        accessToken: encryptSecret(token.access_token),
         organisationId: token.organisation_id || null,
         environment: getGoCardlessEnvironment(),
         status: "connected",

@@ -141,8 +141,8 @@ export default function ParametresPage() {
     fetch("/api/reglages/paiements").then(r => r.json()).then(d => {
       setStripeEnabled(d.stripe_enabled === "true");
       setStripePublicKey(d.stripe_public_key || "");
-      setStripeSecretKey(d.stripe_secret_key || "");
-      setStripeWebhookSecret(d.stripe_webhook_secret || "");
+      setStripeSecretKey("");
+      setStripeWebhookSecret("");
       setStripeConfigured(d.stripe_configured === "true");
       setStripeWebhookConfigured(d.stripe_webhook_configured === "true");
       setGcEnabled(d.gocardless_enabled === "true");
@@ -229,8 +229,10 @@ export default function ParametresPage() {
         gocardless_enabled: String(gcEnabled),
       }),
     });
-    setStripeConfigured(!!stripeSecretKey.trim());
-    setStripeWebhookConfigured(!!stripeWebhookSecret.trim());
+    setStripeConfigured(prev => prev || !!stripeSecretKey.trim());
+    setStripeWebhookConfigured(prev => prev || !!stripeWebhookSecret.trim());
+    setStripeSecretKey("");
+    setStripeWebhookSecret("");
     setSavingPaiements(false);
     setSavedPaiements("Paiements enregistrés."); setTimeout(() => setSavedPaiements(""), 3000);
   }
