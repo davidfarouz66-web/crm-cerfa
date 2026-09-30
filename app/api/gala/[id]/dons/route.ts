@@ -25,7 +25,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     adresse: body.adresse || null,
     codePostal: body.codePostal || null,
     ville: body.ville || null,
-    cerfaDemande: !!body.cerfaDemande,
+    cerfaDemande: true,
     modePaiement: body.modePaiement || "manuel",
   });
 

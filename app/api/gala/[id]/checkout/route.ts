@@ -25,6 +25,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     ? body.raisonSociale
     : `${body.prenom || ""} ${body.nom || ""}`.trim();
 
+  if (!body.email || !body.adresse || !body.codePostal || !body.ville) {
+    return NextResponse.json({
+      error: "Email et adresse complète obligatoires pour générer le reçu fiscal.",
+    }, { status: 400 });
+  }
+
   if (nbFois > 1) {
     return NextResponse.json({
       error: "Le paiement en plusieurs fois n'est pas encore activé en ligne. Choisissez un don unique ou une promesse de don.",
@@ -156,7 +162,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       adresse: body.adresse || "",
       codePostal: body.codePostal || "",
       ville: body.ville || "",
-      cerfaDemande: body.cerfaDemande ? "true" : "false",
+      cerfaDemande: "true",
     },
   });
 

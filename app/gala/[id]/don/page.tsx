@@ -66,7 +66,6 @@ export default function DonPage() {
   const [nomAffiche, setNomAffiche] = useState("");
   const [message, setMessage] = useState("");
   const [anonyme, setAnonyme] = useState(false);
-  const [cerfaDemande, setCerfaDemande] = useState(false);
   const [email, setEmail] = useState("");
   const [adresse, setAdresse] = useState("");
   const [codePostal, setCodePostal] = useState("");
@@ -128,7 +127,7 @@ export default function DonPage() {
       nom: typePersonne === "particulier" ? nom : nomContact,
       raisonSociale: typePersonne === "societe" ? raisonSociale : "",
       siret: typePersonne === "societe" ? siret : "",
-      email, adresse, codePostal, ville, cerfaDemande,
+      email, adresse, codePostal, ville, cerfaDemande: true,
       modePaiement,
       nbFois: nbFois || 1,
       mensualiteDebutMode: gala?.mensualiteDebutMode,
@@ -160,7 +159,7 @@ export default function DonPage() {
         prenom: typePersonne === "particulier" ? prenom : prenomContact,
         nom: typePersonne === "particulier" ? nom : nomContact,
         raisonSociale: typePersonne === "societe" ? raisonSociale : "",
-        siret, telephone, email, adresse, codePostal, ville, cerfaDemande, dateRappel,
+        siret, telephone, email, adresse, codePostal, ville, cerfaDemande: true, dateRappel,
       }),
     });
     setLoading(false);
@@ -458,28 +457,23 @@ export default function DonPage() {
 
           {/* CERFA */}
           <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input type="checkbox" checked={cerfaDemande} onChange={e => setCerfaDemande(e.target.checked)} className="w-4 h-4" />
-              <div className="flex items-center gap-2 min-w-0">
-                <FileText size={16} className="text-emerald-600" />
-                <span className="text-sm font-semibold text-slate-700 leading-snug">Je souhaite un reçu fiscal (CERFA)</span>
+            <div className="flex items-center gap-2 min-w-0">
+              <FileText size={16} className="text-emerald-600" />
+              <span className="text-sm font-semibold text-slate-700 leading-snug">Reçu fiscal généré automatiquement</span>
+            </div>
+            <div className="space-y-2 pt-1">
+              <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email *"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <input required value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Adresse *"
+                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <input required value={codePostal} onChange={e => setCodePostal(e.target.value)} placeholder="Code postal *"
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <input required value={ville} onChange={e => setVille(e.target.value)} placeholder="Ville *"
+                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
               </div>
-            </label>
-            {cerfaDemande && (
-              <div className="space-y-2 pt-1">
-                <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email *"
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <input required value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Adresse *"
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input required value={codePostal} onChange={e => setCodePostal(e.target.value)} placeholder="Code postal *"
-                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  <input required value={ville} onChange={e => setVille(e.target.value)} placeholder="Ville *"
-                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <p className="text-xs text-slate-400">Le CERFA vous sera envoyé par email après votre don</p>
-              </div>
-            )}
+              <p className="text-xs text-slate-400">Après encaissement, votre CERFA sera créé et envoyé automatiquement par email.</p>
+            </div>
           </div>
 
           {/* Paiement (mode payer uniquement) */}
