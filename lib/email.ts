@@ -1,6 +1,60 @@
 import { sendMail } from "./mailer";
 import { downloadPDF } from "./storage";
 
+const escapeHtml = (value: string) => value
+  .replaceAll("&", "&amp;")
+  .replaceAll("<", "&lt;")
+  .replaceAll(">", "&gt;")
+  .replaceAll('"', "&quot;")
+  .replaceAll("'", "&#039;");
+
+export async function sendDonationNotification({
+  to,
+  associationNom,
+  campagneTitre,
+  donateurNom,
+  montant,
+  modePaiement,
+  anonyme,
+}: {
+  to: string;
+  associationNom: string;
+  campagneTitre: string;
+  donateurNom: string;
+  montant: number;
+  modePaiement: string;
+  anonyme: boolean;
+}) {
+  const montantFr = new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+  }).format(montant);
+  const mode = modePaiement === "stripe" ? "Carte bancaire" : modePaiement === "gocardless" ? "Pay by Bank" : modePaiement;
+
+  await sendMail({
+    to,
+    subject: `Nouveau don de ${montantFr} - ${campagneTitre}`,
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#1e293b">
+        <div style="background:#1e40af;padding:24px 32px;border-radius:8px 8px 0 0">
+          <h1 style="color:white;margin:0;font-size:20px">Nouveau don recu</h1>
+          <p style="color:#dbeafe;margin:6px 0 0;font-size:14px">${escapeHtml(associationNom)}</p>
+        </div>
+        <div style="padding:28px 32px;background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px">
+          <p style="font-size:28px;font-weight:bold;color:#1e40af;margin:0 0 22px">${montantFr}</p>
+          <table style="width:100%;font-size:14px;border-collapse:collapse">
+            <tr><td style="color:#64748b;padding:7px 0">Campagne</td><td style="font-weight:600;text-align:right;padding:7px 0">${escapeHtml(campagneTitre)}</td></tr>
+            <tr><td style="color:#64748b;padding:7px 0">Donateur</td><td style="font-weight:600;text-align:right;padding:7px 0">${escapeHtml(donateurNom)}</td></tr>
+            <tr><td style="color:#64748b;padding:7px 0">Paiement</td><td style="font-weight:600;text-align:right;padding:7px 0">${escapeHtml(mode)}</td></tr>
+            <tr><td style="color:#64748b;padding:7px 0">Affichage public</td><td style="font-weight:600;text-align:right;padding:7px 0">${anonyme ? "Anonyme" : "Visible"}</td></tr>
+          </table>
+          <p style="font-size:13px;color:#64748b;margin:24px 0 0">Le don a ete confirme par le prestataire de paiement et enregistre dans Trouma Pro.</p>
+        </div>
+      </div>
+    `,
+  });
+}
+
 export async function sendCerfaEmail({
   to,
   toName,

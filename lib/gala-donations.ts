@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { sendCerfaEmail } from "@/lib/email";
+import { sendCerfaEmail, sendDonationNotification } from "@/lib/email";
 import { generateCerfaPDF } from "@/lib/pdf";
 import { generateMecenaPDF } from "@/lib/pdf-mecena";
 import { uploadPDF } from "@/lib/storage";
@@ -214,6 +214,43 @@ export async function recordPaidGalaDonation(input: PaidGalaDonationInput) {
     where: { id: input.galaId },
     data: { totalCollecte: { increment: input.montant } },
   });
+
+  try {
+    const gala = await prisma.gala.findUnique({
+      where: { id: input.galaId },
+      select: {
+        titre: true,
+        tenantId: true,
+      },
+    });
+    if (gala) {
+      const [association, admin] = await Promise.all([
+        prisma.association.findFirst({
+          where: { tenantId: gala.tenantId },
+          select: { nom: true, email: true },
+        }),
+        prisma.user.findFirst({
+          where: { tenantId: gala.tenantId, status: "active" },
+          orderBy: { createdAt: "asc" },
+          select: { email: true },
+        }),
+      ]);
+      const notificationEmail = clean(association?.email) || clean(admin?.email);
+      if (notificationEmail) {
+        await sendDonationNotification({
+          to: notificationEmail,
+          associationNom: association?.nom || "Votre association",
+          campagneTitre: gala.titre,
+          donateurNom: donorDisplayName(input),
+          montant: input.montant,
+          modePaiement: input.modePaiement,
+          anonyme: !!input.anonyme,
+        });
+      }
+    }
+  } catch (error) {
+    console.error("[gala donation notification]", error);
+  }
 
   try {
     await issueCerfaForGalaDonation(don.id, input);
