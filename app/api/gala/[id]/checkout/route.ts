@@ -6,6 +6,7 @@ import { createGoCardlessPaymentLink } from "@/lib/gocardless";
 import { getPublicBaseUrl, getPublicDonationUrl } from "@/lib/public-url";
 import Stripe from "stripe";
 import { decryptSecret, encryptSecret, isEncryptedSecret } from "@/lib/secret-store";
+import { checkRateLimit, requestIp } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const gala = await prisma.gala.findUnique({ where: { id } });
   if (!gala) return NextResponse.json({ error: "Campagne introuvable" }, { status: 404 });
+  if (!gala.actif) return NextResponse.json({ error: "Cette campagne n'est pas active" }, { status: 403 });
+
+  const rate = checkRateLimit(`checkout:${requestIp(req.headers)}:${id}`, 20, 10 * 60 * 1000);
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Trop de tentatives. Réessayez plus tard." }, {
+      status: 429,
+      headers: { "Retry-After": String(rate.retryAfter) },
+    });
+  }
 
   const origin = getPublicBaseUrl(req.headers.get("origin") || new URL(req.url).origin);
   const donationUrl = getPublicDonationUrl(id, origin);
@@ -24,6 +34,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const nomDonateur = body.type === "societe"
     ? body.raisonSociale
     : `${body.prenom || ""} ${body.nom || ""}`.trim();
+
+  if (!Number.isFinite(montantTotal) || montantTotal <= 0 || montantTotal > 1_000_000) {
+    return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
+  }
 
   if (!body.email || !body.adresse || !body.codePostal || !body.ville) {
     return NextResponse.json({

@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { formatDate, formatMontant } from "@/lib/utils";
 import { requireTenant } from "@/lib/tenant";
 
@@ -37,12 +37,22 @@ export async function GET(req: Request) {
     "Date d'émission":   formatDate(c.dateEmission),
   }));
 
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, `CERFA ${annee}`);
-  ws["!cols"] = [{ wch: 20 }, { wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 15 }];
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(`CERFA ${annee}`);
+  worksheet.columns = [
+    { header: "N° CERFA", key: "N° CERFA", width: 20 },
+    { header: "Donateur", key: "Donateur", width: 30 },
+    { header: "Type", key: "Type", width: 15 },
+    { header: "Date du don", key: "Date du don", width: 15 },
+    { header: "Montant", key: "Montant", width: 12 },
+    { header: "Mode de paiement", key: "Mode de paiement", width: 20 },
+    { header: "Objet", key: "Objet", width: 25 },
+    { header: "Date d'émission", key: "Date d'émission", width: 15 },
+  ];
+  worksheet.addRows(rows);
+  worksheet.getRow(1).font = { bold: true };
 
-  const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+  const buffer = await workbook.xlsx.writeBuffer();
 
   return new NextResponse(buffer, {
     headers: {

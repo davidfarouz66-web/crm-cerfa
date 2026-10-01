@@ -15,6 +15,8 @@ export const config = {
     "/parametres/:path*",
     "/recapitulatif/:path*",
     "/import/:path*",
+    "/campagnes/:path*/saisie",
+    "/gala/:path*/saisie",
     "/api/donateurs/:path*",
     "/api/cerfa/:path*",
     "/api/association/:path*",

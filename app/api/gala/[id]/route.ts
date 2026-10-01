@@ -8,8 +8,38 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const gala = await prisma.gala.findUnique({
     where: { id },
-    include: {
-      dons: { orderBy: { createdAt: "desc" } },
+    select: {
+      id: true,
+      titre: true,
+      description: true,
+      videoUrl: true,
+      objectif: true,
+      dateEvenement: true,
+      lieu: true,
+      typeProjet: true,
+      langue: true,
+      couleurPrimaire: true,
+      couleurSecondaire: true,
+      logoUrl: true,
+      actif: true,
+      totalCollecte: true,
+      promesseEnabled: true,
+      mensualiteEnabled: true,
+      mensualiteOptions: true,
+      mensualiteDebutMode: true,
+      mensualiteDebutDate: true,
+      tenantId: true,
+      dons: {
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          montant: true,
+          nomAffiche: true,
+          anonyme: true,
+          message: true,
+          createdAt: true,
+        },
+      },
     },
   });
   if (!gala) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
@@ -28,8 +58,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   ]);
   const values = Object.fromEntries(settings.map((s) => [s.key, s.value]));
 
+  const { tenantId: _tenantId, ...publicGala } = gala;
   return NextResponse.json({
-    ...gala,
+    ...publicGala,
     publicDonationUrl: getPublicDonationUrl(id),
     paymentMethods: {
       stripeReady: values.stripe_enabled === "true" && !!values.stripe_secret_key,

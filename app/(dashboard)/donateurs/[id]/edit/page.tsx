@@ -3,10 +3,15 @@ import { notFound } from "next/navigation";
 import DonateurForm from "@/components/forms/DonateurForm";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { requireTenant } from "@/lib/tenant";
+import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
 
 export default async function EditDonateurPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await requireTenant();
+  if (t instanceof NextResponse) redirect("/login");
   const { id } = await params;
-  const donateur = await prisma.donateur.findUnique({ where: { id } });
+  const donateur = await prisma.donateur.findFirst({ where: { id, tenantId: t.tenantId } });
   if (!donateur) notFound();
 
   return (

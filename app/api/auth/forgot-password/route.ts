@@ -3,29 +3,39 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { sendMail } from "@/lib/mailer";
 import crypto from "crypto";
+import { checkRateLimit, requestIp } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const rate = checkRateLimit(`forgot:${requestIp(req.headers)}`, 5, 60 * 60 * 1000);
+    if (!rate.allowed) {
+      return NextResponse.json({ error: "Trop de demandes. Réessayez plus tard." }, {
+        status: 429,
+        headers: { "Retry-After": String(rate.retryAfter) },
+      });
+    }
     const { email } = await req.json();
     if (!email) return NextResponse.json({ error: "Email requis" }, { status: 400 });
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
     // On répond toujours "ok" pour ne pas révéler si l'email existe
     if (!user) return NextResponse.json({ ok: true });
 
     const token = crypto.randomBytes(32).toString("hex");
+    const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const expiry = new Date(Date.now() + 1000 * 60 * 60); // 1h
 
     await prisma.user.update({
-      where: { email },
-      data: { resetToken: token, resetTokenExpiry: expiry },
+      where: { email: normalizedEmail },
+      data: { resetToken: tokenHash, resetTokenExpiry: expiry },
     });
 
     const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
 
     await sendMail({
-      to: email,
+      to: normalizedEmail,
       subject: "Réinitialisation de votre mot de passe — Trouma Pro",
       html: `
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
@@ -58,9 +68,6 @@ export async function POST(req: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("[forgot-password]", message);
-    return NextResponse.json({
-      error: "Erreur serveur lors de la réinitialisation.",
-      detail: message,
-    }, { status: 500 });
+    return NextResponse.json({ error: "Erreur serveur lors de la réinitialisation." }, { status: 500 });
   }
 }

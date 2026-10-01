@@ -117,7 +117,12 @@ export async function POST(req: NextRequest) {
   const signature = req.headers.get("webhook-signature");
   const secret = process.env.GOCARDLESS_WEBHOOK_ENDPOINT_SECRET;
 
-  if (secret && !verifyGoCardlessWebhookSignature(body, signature, secret)) {
+  if (!secret) {
+    console.error("[gocardless webhook] secret manquant");
+    return NextResponse.json({ error: "Webhook GoCardless non configuré" }, { status: 503 });
+  }
+
+  if (!verifyGoCardlessWebhookSignature(body, signature, secret)) {
     return NextResponse.json({ error: "Signature GoCardless invalide" }, { status: 400 });
   }
 

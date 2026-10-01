@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Pencil, FilePlus, Download, Mail, Phone, MapPin, CheckCircle, Clock } from "lucide-react";
 import { formatMontant, formatDate } from "@/lib/utils";
+import { requireTenant } from "@/lib/tenant";
+import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
 
 const modeLabel: Record<string, string> = {
   virement: "Virement",
@@ -12,9 +15,11 @@ const modeLabel: Record<string, string> = {
 };
 
 export default async function DonateurPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = await requireTenant();
+  if (t instanceof NextResponse) redirect("/login");
   const { id } = await params;
-  const donateur = await prisma.donateur.findUnique({
-    where: { id },
+  const donateur = await prisma.donateur.findFirst({
+    where: { id, tenantId: t.tenantId },
     include: { cerfas: { orderBy: { dateDon: "desc" } } },
   });
   if (!donateur) notFound();
