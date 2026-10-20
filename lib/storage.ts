@@ -33,6 +33,23 @@ export async function deletePDF(filename: string): Promise<void> {
   if (error) console.warn(`Suppression PDF échouée (ignorée): ${error.message}`);
 }
 
+export async function uploadPrivateDocument(path: string, bytes: Buffer, mimeType: string): Promise<void> {
+  const { error } = await getSupabase().storage
+    .from(CERFA_BUCKET)
+    .upload(path, bytes, { contentType: mimeType, upsert: false });
+  if (error) throw new Error(`Erreur upload justificatif: ${error.message}`);
+}
+
+export async function downloadPrivateDocument(path: string): Promise<Uint8Array> {
+  return downloadPDF(path);
+}
+
+export async function deletePrivateDocuments(paths: string[]): Promise<void> {
+  if (paths.length === 0) return;
+  const { error } = await getSupabase().storage.from(CERFA_BUCKET).remove(paths);
+  if (error) console.warn(`Suppression justificatifs échouée (ignorée): ${error.message}`);
+}
+
 export async function uploadImage(filename: string, bytes: Buffer, mimeType: string): Promise<string> {
   const supabase = getSupabase();
   const { error } = await supabase.storage

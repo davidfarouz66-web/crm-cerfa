@@ -65,8 +65,18 @@ test.describe("Authentification", () => {
 test.describe("Inscription", () => {
   test("affiche le formulaire d'inscription", async ({ page }) => {
     await page.goto("/register");
+    await expect(page.getByRole("heading", { name: "1. Identification de l’organisme" })).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]').first()).toBeVisible();
+    await expect(page.getByLabel("Statuts datés et signés *")).toBeVisible();
+    await expect(page.getByLabel("Justificatif RNA ou avis SIRENE *")).toBeVisible();
+    await expect(page.getByText(/ne constitue pas une reconnaissance/i)).toBeVisible();
+  });
+
+  test("rend la preuve fiscale obligatoire pour un rescrit favorable", async ({ page }) => {
+    await page.goto("/register");
+    await page.getByLabel("Situation du rescrit mécénat *").selectOption("favorable");
+    await expect(page.getByLabel("Réponse favorable au rescrit *")).toHaveAttribute("required", "");
   });
 
   test("affiche une erreur si les mots de passe ne correspondent pas", async ({ page }) => {
@@ -75,8 +85,11 @@ test.describe("Inscription", () => {
     const passwords = page.locator('input[type="password"]');
     await passwords.first().fill("MotDePasse1!");
     await passwords.last().fill("Différent1!");
+    await page.locator("form").evaluate(form => {
+      (form as HTMLFormElement).noValidate = true;
+    });
     await page.click('button[type="submit"]');
-    await expect(page.getByText(/correspondent pas|identiques|confirmer/i)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText("Les mots de passe ne correspondent pas.", { exact: true })).toBeVisible();
   });
 });
 

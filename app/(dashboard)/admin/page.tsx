@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { FileText, Euro, AlertTriangle, CheckCircle, Clock, Search, UserCheck, UserX, Hourglass, Eye } from "lucide-react";
+import { FileText, Euro, AlertTriangle, CheckCircle, Clock, Search, UserCheck, UserX, Hourglass, Eye, ExternalLink, ShieldCheck, X } from "lucide-react";
 
 interface Tenant {
   id: string;
@@ -19,6 +19,25 @@ interface Tenant {
   dernierCerfa: string | null;
   dernierNumero: string | null;
   eligible: boolean;
+  rna: string | null;
+  siret: string | null;
+  telephone: string | null;
+  adresse: string | null;
+  codePostal: string | null;
+  objetSocial: string | null;
+  publicBeneficiaire: string | null;
+  typeOrganisme: string | null;
+  responsableLegalNom: string | null;
+  responsableLegalFonction: string | null;
+  rescritFiscalStatut: string | null;
+  dossierCerfaSoumisAt: string | null;
+  attestationExactitude: boolean;
+  attestationResponsabilite: boolean;
+  documentStatutsNom: string | null;
+  documentImmatriculationNom: string | null;
+  documentEligibiliteNom: string | null;
+  articlesFiscauxAutorises: string | null;
+  commentaireEligibilite: string | null;
 }
 
 function formatDate(d: string | null) {
@@ -59,6 +78,9 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [consulting, setConsulting] = useState<string | null>(null);
+  const [reviewing, setReviewing] = useState<Tenant | null>(null);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewArticles, setReviewArticles] = useState("200");
 
   const role = (session?.user as { role?: string })?.role;
 
@@ -119,6 +141,41 @@ export default function AdminPage() {
     }
   }
 
+  function openReview(tenant: Tenant) {
+    setReviewing(tenant);
+    setReviewComment(tenant.commentaireEligibilite || "");
+    setReviewArticles(tenant.articlesFiscauxAutorises || "200");
+  }
+
+  async function setEligibility(eligible: boolean) {
+    if (!reviewing) return;
+    setUpdating(reviewing.tenantId);
+    try {
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(reviewing.tenantId)}/eligibility`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eligible,
+          commentaire: reviewComment,
+          articlesFiscauxAutorises: reviewArticles,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error || "Décision impossible");
+      setTenants(prev => prev.map(t => t.tenantId === reviewing.tenantId ? {
+        ...t,
+        eligible,
+        articlesFiscauxAutorises: data.articlesFiscauxAutorises,
+        commentaireEligibilite: data.commentaireEligibilite,
+      } : t));
+      setReviewing(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Décision impossible");
+    } finally {
+      setUpdating(null);
+    }
+  }
+
   const filtered = tenants.filter(t =>
     t.nom.toLowerCase().includes(q.toLowerCase()) ||
     (t.email || "").toLowerCase().includes(q.toLowerCase()) ||
@@ -158,6 +215,66 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {reviewing && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 p-3 md:p-8" role="dialog" aria-modal="true" aria-labelledby="review-title">
+          <div className="mx-auto max-w-3xl rounded-xl bg-white shadow-2xl">
+            <div className="sticky top-0 flex items-start justify-between gap-4 rounded-t-xl border-b border-slate-200 bg-white px-5 py-4">
+              <div>
+                <h2 id="review-title" className="text-lg font-bold text-slate-900">Dossier CERFA · {reviewing.nom}</h2>
+                <p className="mt-1 text-xs text-slate-500">Soumis le {formatDate(reviewing.dossierCerfaSoumisAt)}</p>
+              </div>
+              <button onClick={() => setReviewing(null)} aria-label="Fermer" className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><X size={19} /></button>
+            </div>
+            <div className="space-y-6 p-5">
+              <section>
+                <h3 className="text-sm font-bold text-slate-800">Identité déclarée</h3>
+                <dl className="mt-3 grid gap-3 text-sm sm:grid-cols-2">
+                  <Info label="RNA" value={reviewing.rna} />
+                  <Info label="SIRET" value={reviewing.siret} />
+                  <Info label="Type" value={reviewing.typeOrganisme} />
+                  <Info label="Téléphone" value={reviewing.telephone} />
+                  <Info label="Siège" value={[reviewing.adresse, reviewing.codePostal, reviewing.ville].filter(Boolean).join(", ")} />
+                  <Info label="Représentant légal" value={[reviewing.responsableLegalNom, reviewing.responsableLegalFonction].filter(Boolean).join(" · ")} />
+                </dl>
+              </section>
+              <section className="space-y-3">
+                <h3 className="text-sm font-bold text-slate-800">Activités déclarées</h3>
+                <Info label="Objet social" value={reviewing.objetSocial} />
+                <Info label="Public bénéficiaire" value={reviewing.publicBeneficiaire} />
+              </section>
+              <section>
+                <h3 className="text-sm font-bold text-slate-800">Justificatifs privés</h3>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  <DocumentLink tenantId={reviewing.tenantId} type="statuts" label="Statuts signés" name={reviewing.documentStatutsNom} />
+                  <DocumentLink tenantId={reviewing.tenantId} type="immatriculation" label="RNA / SIRENE" name={reviewing.documentImmatriculationNom} />
+                  <DocumentLink tenantId={reviewing.tenantId} type="eligibilite" label="Preuve fiscale" name={reviewing.documentEligibiliteNom} />
+                </div>
+                <p className="mt-3 text-xs text-slate-500">Rescrit mécénat déclaré : <strong>{reviewing.rescritFiscalStatut || "non renseigné"}</strong></p>
+              </section>
+              <section className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <h3 className="text-sm font-bold text-slate-800">Contrôle</h3>
+                <p className="mt-2 text-xs text-slate-600">
+                  Attestations : exactitude {reviewing.attestationExactitude ? "acceptée" : "absente"} · responsabilité {reviewing.attestationResponsabilite ? "acceptée" : "absente"}.
+                </p>
+                <label className="mt-4 block text-sm font-medium text-slate-700">Articles fiscaux autorisés</label>
+                <select value={reviewArticles} onChange={e => setReviewArticles(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm">
+                  <option value="200">Article 200 · particuliers</option>
+                  <option value="238bis">Article 238 bis · entreprises</option>
+                  <option value="978">Article 978 · IFI</option>
+                  <option value="200,238bis">Articles 200 + 238 bis</option>
+                  <option value="200,238bis,978">Articles 200 + 238 bis + 978</option>
+                </select>
+                <label className="mt-4 block text-sm font-medium text-slate-700">Commentaire de décision</label>
+                <textarea value={reviewComment} onChange={e => setReviewComment(e.target.value)} rows={3} maxLength={1000} className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm" placeholder="Éléments contrôlés, réserve ou motif du refus" />
+              </section>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button onClick={() => setEligibility(false)} disabled={updating === reviewing.tenantId} className="rounded-lg border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">Refuser l’éligibilité</button>
+                <button onClick={() => setEligibility(true)} disabled={updating === reviewing.tenantId} className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"><ShieldCheck size={16} /> Valider le dossier CERFA</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="bg-white border-b border-slate-200 px-4 md:px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -257,6 +374,12 @@ export default function AdminPage() {
 
                 <div className="flex gap-2 pt-1">
                   <button
+                    onClick={() => openReview(t)}
+                    className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-3 py-2 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
+                  >
+                    <FileText size={12} /> Dossier
+                  </button>
+                  <button
                     onClick={() => consulter(t.tenantId, t.nom)}
                     disabled={consulting === t.tenantId}
                     className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-3 py-2 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50"
@@ -266,7 +389,8 @@ export default function AdminPage() {
                   {t.userStatus !== "active" && (
                     <button
                       onClick={() => setStatus(t.tenantId, "active")}
-                      disabled={busy}
+                      disabled={busy || !t.eligible}
+                      title={!t.eligible ? "Validez d’abord le dossier CERFA" : undefined}
                       className="flex-1 inline-flex items-center justify-center gap-1 text-xs px-3 py-2 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors disabled:opacity-50"
                     >
                       <UserCheck size={12} /> Activer
@@ -343,12 +467,17 @@ export default function AdminPage() {
                     <td className="px-4 py-3 text-xs text-slate-400">{formatDate(t.createdAt)}</td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center gap-1.5">
+                        <button onClick={() => openReview(t)}
+                          className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
+                          <FileText size={12} /> Dossier
+                        </button>
                         <button onClick={() => consulter(t.tenantId, t.nom)} disabled={consulting === t.tenantId}
                           className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors disabled:opacity-50">
                           <Eye size={12} /> Consulter
                         </button>
                         {t.userStatus !== "active" && (
-                          <button onClick={() => setStatus(t.tenantId, "active")} disabled={busy}
+                          <button onClick={() => setStatus(t.tenantId, "active")} disabled={busy || !t.eligible}
+                            title={!t.eligible ? "Validez d’abord le dossier CERFA" : undefined}
                             className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 hover:bg-emerald-200 transition-colors disabled:opacity-50">
                             <UserCheck size={12} /> Activer
                           </button>
@@ -376,5 +505,27 @@ export default function AdminPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value: string | null | undefined }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase text-slate-400">{label}</dt>
+      <dd className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{value || "Non renseigné"}</dd>
+    </div>
+  );
+}
+
+function DocumentLink({ tenantId, type, label, name }: { tenantId: string; type: string; label: string; name: string | null }) {
+  if (!name) {
+    return <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-700"><strong>{label}</strong><br />Document absent</div>;
+  }
+  return (
+    <a href={`/api/admin/tenants/${encodeURIComponent(tenantId)}/documents/${type}`} target="_blank" rel="noreferrer"
+      className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-800 hover:bg-blue-100">
+      <span className="flex items-center gap-1 font-semibold">{label} <ExternalLink size={12} /></span>
+      <span className="mt-1 block truncate text-blue-600">{name}</span>
+    </a>
   );
 }

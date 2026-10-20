@@ -191,7 +191,7 @@ export default function ParametresPage() {
       const res = await fetch("/api/association", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, logoUrl: assoc.logoUrl, signatureUrl: assoc.signatureUrl, organismeEligibleMecenat: eligible }),
+        body: JSON.stringify({ ...data, logoUrl: assoc.logoUrl, signatureUrl: assoc.signatureUrl }),
       });
       const json = await res.json();
       if (!res.ok) { setSaveError(json.error || `Erreur ${res.status}`); }
@@ -402,29 +402,22 @@ export default function ParametresPage() {
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">
               <p className="text-sm font-semibold text-slate-700 flex items-center gap-2"><ShieldCheck size={15} className="text-slate-400" /> Éligibilité fiscale</p>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input type="checkbox" checked={eligible} onChange={e => setEligible(e.target.checked)}
-                  className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500" />
-                <span className="text-sm text-slate-700 font-medium">L&apos;organisme est éligible au mécénat (art. 200 / 238 bis / 978 CGI)</span>
-              </label>
-              {!eligible && (
-                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex gap-2">
-                  <AlertTriangle size={15} className="text-red-500 shrink-0 mt-0.5" />
-                  <p className="text-xs text-red-700 font-medium">Tant que cette case n&apos;est pas cochée, la génération de CERFA sera bloquée.</p>
-                </div>
-              )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className={`rounded-xl border px-4 py-3 flex gap-2 ${eligible ? "bg-emerald-50 border-emerald-200" : "bg-amber-50 border-amber-200"}`}>
+                {eligible
+                  ? <ShieldCheck size={17} className="text-emerald-600 shrink-0 mt-0.5" />
+                  : <AlertTriangle size={17} className="text-amber-600 shrink-0 mt-0.5" />}
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Articles fiscaux autorisés</label>
-                  <select name="articlesFiscauxAutorises" defaultValue={assoc.articlesFiscauxAutorises || "200"}
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white">
-                    <option value="200">Art. 200 — Particuliers</option>
-                    <option value="238bis">Art. 238 bis — Entreprises</option>
-                    <option value="978">Art. 978 — IFI</option>
-                    <option value="200,238bis">Art. 200 + 238 bis</option>
-                    <option value="200,238bis,978">Art. 200 + 238 bis + 978</option>
-                  </select>
+                  <p className={`text-sm font-semibold ${eligible ? "text-emerald-800" : "text-amber-800"}`}>
+                    {eligible ? "Dossier CERFA validé par Trouma Pro" : "Dossier CERFA en attente de validation"}
+                  </p>
+                  <p className={`mt-1 text-xs ${eligible ? "text-emerald-700" : "text-amber-700"}`}>
+                    {eligible
+                      ? `Articles autorisés : ${assoc.articlesFiscauxAutorises || "200"}.`
+                      : "L’émission de reçus fiscaux reste bloquée jusqu’à la validation manuelle de vos justificatifs."}
+                  </p>
                 </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Type d&apos;organisme</label>
                   <select name="typeOrganisme" defaultValue={assoc.typeOrganisme || ""}
@@ -446,18 +439,12 @@ export default function ParametresPage() {
                     className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Date de dernière vérification</label>
-                <input type="date" name="dateVerificationEligibilite"
-                  defaultValue={assoc.dateVerificationEligibilite ? assoc.dateVerificationEligibilite.split("T")[0] : ""}
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Commentaire éligibilité</label>
-                <textarea name="commentaireEligibilite" defaultValue={assoc.commentaireEligibilite || ""} rows={2}
-                  placeholder="Ex. : rescrit fiscal obtenu le 01/01/2024, valable 3 ans..."
-                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
-              </div>
+              {assoc.dateVerificationEligibilite && (
+                <p className="text-xs text-slate-500">
+                  Dernière vérification : {new Date(assoc.dateVerificationEligibilite).toLocaleDateString("fr-FR")}
+                  {assoc.commentaireEligibilite ? ` — ${assoc.commentaireEligibilite}` : ""}
+                </p>
+              )}
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 space-y-4">

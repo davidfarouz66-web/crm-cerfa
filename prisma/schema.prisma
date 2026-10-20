@@ -50,6 +50,20 @@ model Association {
   commentaireEligibilite      String?
   responsableLegalNom         String?
   responsableLegalFonction    String?
+  publicBeneficiaire           String?
+  rescritFiscalStatut          String?
+  dossierCerfaSoumisAt         DateTime?
+  attestationExactitude        Boolean  @default(false)
+  attestationResponsabilite    Boolean  @default(false)
+  documentStatutsPath          String?
+  documentStatutsNom           String?
+  documentStatutsMime          String?
+  documentImmatriculationPath  String?
+  documentImmatriculationNom   String?
+  documentImmatriculationMime  String?
+  documentEligibilitePath      String?
+  documentEligibiliteNom       String?
+  documentEligibiliteMime      String?
   // RGPD
   dureConservationAnnees      Int      @default(10)
   contactRgpd                 String?

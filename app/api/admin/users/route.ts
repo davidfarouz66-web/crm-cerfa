@@ -21,6 +21,18 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: "Données invalides" }, { status: 400 });
   }
 
+  if (status === "active") {
+    const association = await prisma.association.findFirst({
+      where: { tenantId },
+      select: { organismeEligibleMecenat: true },
+    });
+    if (!association?.organismeEligibleMecenat) {
+      return NextResponse.json({
+        error: "Le dossier CERFA doit être validé avant l’activation du compte.",
+      }, { status: 400 });
+    }
+  }
+
   await prisma.user.updateMany({
     where: { tenantId },
     data: { status },

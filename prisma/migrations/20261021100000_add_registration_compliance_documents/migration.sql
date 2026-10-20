@@ -1,0 +1,15 @@
+ALTER TABLE "Association"
+ADD COLUMN "publicBeneficiaire" TEXT,
+ADD COLUMN "rescritFiscalStatut" TEXT,
+ADD COLUMN "dossierCerfaSoumisAt" TIMESTAMP(3),
+ADD COLUMN "attestationExactitude" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "attestationResponsabilite" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "documentStatutsPath" TEXT,
+ADD COLUMN "documentStatutsNom" TEXT,
+ADD COLUMN "documentStatutsMime" TEXT,
+ADD COLUMN "documentImmatriculationPath" TEXT,
+ADD COLUMN "documentImmatriculationNom" TEXT,
+ADD COLUMN "documentImmatriculationMime" TEXT,
+ADD COLUMN "documentEligibilitePath" TEXT,
+ADD COLUMN "documentEligibiliteNom" TEXT,
+ADD COLUMN "documentEligibiliteMime" TEXT;
