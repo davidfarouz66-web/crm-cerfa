@@ -44,7 +44,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   });
   if (!gala) return NextResponse.json({ error: "Introuvable" }, { status: 404 });
 
-  const [settings, gcConnection] = await Promise.all([
+  const [settings, gcConnection, association] = await Promise.all([
     prisma.settings.findMany({
       where: {
         tenantId: gala.tenantId,
@@ -55,13 +55,34 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       where: { tenantId: gala.tenantId },
       select: { status: true },
     }).catch(() => null),
+    prisma.association.findFirst({
+      where: { tenantId: gala.tenantId },
+      select: {
+        nom: true,
+        presentationPublique: true,
+        objetSocial: true,
+        email: true,
+        telephone: true,
+        remiseFondsDescription: true,
+        organismeEligibleMecenat: true,
+      },
+    }),
   ]);
   const values = Object.fromEntries(settings.map((s) => [s.key, s.value]));
 
   const { tenantId: _tenantId, ...publicGala } = gala;
+  void _tenantId;
   return NextResponse.json({
     ...publicGala,
     publicDonationUrl: getPublicDonationUrl(id),
+    organizer: association ? {
+      nom: association.nom || null,
+      presentation: association.presentationPublique || association.objetSocial || null,
+      email: association.email || null,
+      telephone: association.telephone || null,
+      remiseFondsDescription: association.remiseFondsDescription || null,
+      organismeEligibleMecenat: association.organismeEligibleMecenat,
+    } : null,
     paymentMethods: {
       stripeReady: values.stripe_enabled === "true" && !!values.stripe_secret_key,
       gocardlessReady: values.gocardless_enabled === "true" && (gcConnection?.status === "connected" || !!process.env.GOCARDLESS_ACCESS_TOKEN),

@@ -39,7 +39,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Montant invalide" }, { status: 400 });
   }
 
-  if (!body.email || !body.adresse || !body.codePostal || !body.ville) {
+  if (!body.email) {
+    return NextResponse.json({ error: "L'adresse email est obligatoire." }, { status: 400 });
+  }
+
+  const association = await prisma.association.findFirst({
+    where: { tenantId: gala.tenantId },
+    select: { organismeEligibleMecenat: true },
+  });
+  const cerfaDemande = body.cerfaDemande === true || body.cerfaDemande === "true";
+  if (cerfaDemande && !association?.organismeEligibleMecenat) {
+    return NextResponse.json({ error: "Le reçu fiscal n'est pas disponible pour cette collecte." }, { status: 400 });
+  }
+  if (cerfaDemande && (!body.adresse || !body.codePostal || !body.ville)) {
     return NextResponse.json({
       error: "Email et adresse complète obligatoires pour générer le reçu fiscal.",
     }, { status: 400 });
@@ -176,7 +188,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       adresse: body.adresse || "",
       codePostal: body.codePostal || "",
       ville: body.ville || "",
-      cerfaDemande: "true",
+      cerfaDemande: cerfaDemande ? "true" : "false",
     },
   });
 

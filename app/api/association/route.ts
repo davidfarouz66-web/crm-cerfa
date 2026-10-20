@@ -27,6 +27,8 @@ export async function PUT(req: Request) {
       siret:            str(body.siret),
       rna:              str(body.rna),
       objetSocial:      str(body.objetSocial),
+      presentationPublique: str(body.presentationPublique),
+      remiseFondsDescription: str(body.remiseFondsDescription),
       qualiteOrganisme: str(body.qualiteOrganisme),
       representant:     str(body.representant),
       telephone:        str(body.telephone),

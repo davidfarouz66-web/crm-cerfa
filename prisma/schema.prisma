@@ -32,6 +32,8 @@ model Association {
   siret            String?
   rna              String?
   objetSocial      String?
+  presentationPublique String?
+  remiseFondsDescription String?
   qualiteOrganisme String?
   representant     String?
   telephone        String?

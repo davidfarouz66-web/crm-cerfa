@@ -14,6 +14,8 @@ interface Association {
   siret?: string;
   rna?: string;
   objetSocial?: string;
+  presentationPublique?: string;
+  remiseFondsDescription?: string;
   qualiteOrganisme?: string;
   representant?: string;
   telephone?: string;
@@ -358,6 +360,19 @@ export default function ParametresPage() {
                 <textarea name="objetSocial" defaultValue={assoc.objetSocial || ""} rows={3}
                   placeholder="Assurer la pérennité et le fonctionnement du culte..."
                   className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Présentation publique de l&apos;association</label>
+                <textarea name="presentationPublique" defaultValue={assoc.presentationPublique || ""} rows={3}
+                  placeholder="Courte présentation vérifiée, affichée sur les pages de collecte."
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">Remise des fonds aux bénéficiaires</label>
+                <textarea name="remiseFondsDescription" defaultValue={assoc.remiseFondsDescription || ""} rows={3}
+                  placeholder="Expliquez uniquement le circuit réel et vérifié de remise des fonds."
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm resize-none" />
+                <p className="mt-1 text-xs text-slate-400">Ce texte est public. Laissez vide si l&apos;information n&apos;est pas encore validée.</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Qualité de l&apos;organisme</label>

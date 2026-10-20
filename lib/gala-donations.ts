@@ -174,7 +174,7 @@ export async function recordPaidGalaDonation(input: PaidGalaDonationInput) {
       where: { OR: dedupeRefs },
     });
     if (existing) {
-      if (!existing.cerfaId) {
+      if (input.cerfaDemande && !existing.cerfaId) {
         try {
           await issueCerfaForGalaDonation(existing.id, input);
         } catch (error) {
@@ -203,7 +203,7 @@ export async function recordPaidGalaDonation(input: PaidGalaDonationInput) {
       adresse: clean(input.adresse),
       codePostal: clean(input.codePostal),
       ville: clean(input.ville),
-      cerfaDemande: true,
+      cerfaDemande: !!input.cerfaDemande,
       stripePaymentId: input.stripePaymentId || null,
       gocardlessBillingRequestId: input.gocardlessBillingRequestId || null,
       gocardlessPaymentId: input.gocardlessPaymentId || null,
@@ -252,12 +252,14 @@ export async function recordPaidGalaDonation(input: PaidGalaDonationInput) {
     console.error("[gala donation notification]", error);
   }
 
-  try {
-    await issueCerfaForGalaDonation(don.id, input);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("[gala cerfa automation]", message);
-    await prisma.donGala.update({ where: { id: don.id }, data: { cerfaError: message } }).catch(() => {});
+  if (input.cerfaDemande) {
+    try {
+      await issueCerfaForGalaDonation(don.id, input);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("[gala cerfa automation]", message);
+      await prisma.donGala.update({ where: { id: don.id }, data: { cerfaError: message } }).catch(() => {});
+    }
   }
 
   return prisma.donGala.findUnique({ where: { id: don.id } });

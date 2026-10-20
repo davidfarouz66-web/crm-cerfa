@@ -132,7 +132,8 @@ function getProgress(gala: Gala) {
   return Math.min(100, Math.round((gala.totalCollecte / gala.objectif) * 100));
 }
 
-export default function GalaPage({ initialCategory = "tous" }: { initialCategory?: string } = {}) {
+export default function GalaPage() {
+  const initialCategory = "tous";
   const [galas, setGalas] = useState<Gala[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);

@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Loader2, CreditCard, Building2, User, FileText, CalendarClock, Heart, MessageCircle, ShieldCheck } from "lucide-react";
+import {
+  Building2, CalendarDays, Check, ChevronDown, CreditCard, Heart,
+  Loader2, Mail, MessageCircle, Share2, ShieldCheck,
+} from "lucide-react";
 
 interface Don {
   id: string;
@@ -13,28 +16,47 @@ interface Don {
   createdAt: string;
 }
 
+interface Organizer {
+  nom: string | null;
+  presentation: string | null;
+  email: string | null;
+  telephone: string | null;
+  remiseFondsDescription: string | null;
+  organismeEligibleMecenat: boolean;
+}
+
 interface Gala {
-  id: string; titre: string; description: string | null; videoUrl: string | null;
-  objectif: number; totalCollecte: number;
-  couleurPrimaire: string; couleurSecondaire: string;
-  promesseEnabled: boolean; mensualiteEnabled: boolean;
-  mensualiteOptions: string; mensualiteDebutMode: string;
-  mensualiteDebutDate: string | null;
-  lieu: string | null; logoUrl: string | null; typeProjet?: string | null;
+  id: string;
+  titre: string;
+  description: string | null;
+  videoUrl: string | null;
+  objectif: number;
+  totalCollecte: number;
+  dateEvenement: string;
+  couleurPrimaire: string;
+  couleurSecondaire: string;
+  promesseEnabled: boolean;
+  lieu: string | null;
+  logoUrl: string | null;
+  typeProjet?: string | null;
+  publicDonationUrl?: string;
+  organizer?: Organizer | null;
   paymentMethods?: { stripeReady?: boolean; gocardlessReady?: boolean };
   dons: Don[];
 }
 
-function getVideoEmbedUrl(url: string): string | null {
-  if (!url) return null;
-  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
-  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
-  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-  return null;
-}
-
-const MONTANTS = [50, 100, 200, 500, 1000, 5000];
+const FEATURED_CAMPAIGN_ID = "cmtj8rao3000004l41t2zn3rc";
+const FEATURED_COPY = {
+  title: "Aidons une jeune orpheline à préparer son mariage",
+  subtitle: "Son père ne sera pas là sous la ‘houppa. Ensemble, entourons-la de solidarité.",
+  summary: "Une jeune fille en Israël s’apprête à se marier. Depuis le décès de son père, sa maman assume seule les besoins de la famille. Aidons-les à faire face aux dépenses du mariage et à vivre cette journée avec dignité et sérénité.",
+  details: [
+    "À l’approche du mariage, de nombreux frais restent à financer. Cette collecte a pour objectif de soulager sa maman et d’aider cette jeune kalla à commencer sa nouvelle vie plus sereinement.",
+    "Chaque participation compte, quel que soit son montant. Si vous ne pouvez pas donner, partager cette collecte est déjà une aide précieuse.",
+    "Merci du fond du cœur pour votre générosité. Que cette mitsva soit une source de bénédictions et de belles semahot pour vous et vos proches.",
+  ],
+};
+const MONTANTS = [18, 36, 50, 100, 180, 360];
 
 const BACKGROUND_IMAGES: Record<string, string> = {
   general: "https://images.unsplash.com/photo-1548018560-c7196548e84d?auto=format&fit=crop&w=1800&q=85",
@@ -49,13 +71,23 @@ function getBackgroundImage(gala: Gala) {
   return gala.logoUrl || BACKGROUND_IMAGES[gala.typeProjet || "general"] || BACKGROUND_IMAGES.general;
 }
 
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block text-sm font-semibold text-slate-700">
+      <span className="mb-1.5 block">{label}</span>
+      {children}
+    </label>
+  );
+}
+
+const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
+
 export default function DonPage() {
   const { id } = useParams<{ id: string }>();
   const [gala, setGala] = useState<Gala | null>(null);
+  const [loadError, setLoadError] = useState("");
   const [montant, setMontant] = useState("");
   const [montantLibre, setMontantLibre] = useState("");
-  const [nbFois, setNbFois] = useState<number | null>(null);
-  const [mode, setMode] = useState<"payer" | "promesse">("payer");
   const [typePersonne, setTypePersonne] = useState<"particulier" | "societe">("particulier");
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
@@ -70,22 +102,27 @@ export default function DonPage() {
   const [adresse, setAdresse] = useState("");
   const [codePostal, setCodePostal] = useState("");
   const [ville, setVille] = useState("");
-  const [telephone, setTelephone] = useState("");
-  const [dateRappel, setDateRappel] = useState("");
+  const [cerfaDemande, setCerfaDemande] = useState(false);
   const [modePaiement, setModePaiement] = useState<"stripe" | "sepa">("stripe");
   const [loading, setLoading] = useState(false);
-  const [promesseOk, setPromesseOk] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [shareStatus, setShareStatus] = useState("");
 
   useEffect(() => {
     let mounted = true;
-
     async function loadGala() {
-      const res = await fetch(`/api/gala/${id}`);
-      const data = await res.json();
-      if (mounted) setGala(data);
+      try {
+        const res = await fetch(`/api/gala/${id}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Campagne introuvable");
+        if (mounted) {
+          setGala(data);
+          setLoadError("");
+        }
+      } catch (error) {
+        if (mounted) setLoadError(error instanceof Error ? error.message : "Chargement impossible");
+      }
     }
-
     loadGala();
     const timer = window.setInterval(loadGala, 15000);
     return () => {
@@ -94,443 +131,202 @@ export default function DonPage() {
     };
   }, [id]);
 
-  const montantFinal = montant || montantLibre;
-  const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
-  const mensualiteOpts = gala?.mensualiteOptions?.split(",").map(Number).filter(Boolean) || [];
-  const montantMensuel = montantFinal ? parseFloat(montantFinal) : 0;
-  const totalEngagement = nbFois ? montantMensuel * nbFois : montantMensuel;
+  const montantFinal = montantLibre || montant;
+  const montantNombre = Number(montantFinal);
+  const fmt = (value: number) => new Intl.NumberFormat("fr-FR", {
+    style: "currency", currency: "EUR", maximumFractionDigits: 0,
+  }).format(value);
   const stripeReady = !!gala?.paymentMethods?.stripeReady;
   const gocardlessReady = !!gala?.paymentMethods?.gocardlessReady;
-  const showInstallmentOptions = mode === "promesse" && gala?.mensualiteEnabled && mensualiteOpts.length > 0 && montantFinal;
+  const selectedPaymentMode = stripeReady
+    ? (modePaiement === "sepa" && gocardlessReady ? "sepa" : "stripe")
+    : "sepa";
+  const receiptAvailable = !!gala?.organizer?.organismeEligibleMecenat;
+  const featured = gala?.id === FEATURED_CAMPAIGN_ID;
+  const displayTitle = featured ? FEATURED_COPY.title : (gala?.titre || "");
+  const displaySubtitle = featured ? FEATURED_COPY.subtitle : (gala?.lieu || "Ensemble, faisons grandir cette collecte.");
 
-  useEffect(() => {
+  function chooseAmount(value: number) {
+    setMontant(String(value));
+    setMontantLibre("");
+    setCheckoutError("");
+  }
+
+  function changeCustomAmount(value: string) {
+    setMontantLibre(value);
+    if (value) setMontant("");
+    setCheckoutError("");
+  }
+
+  async function handleShare() {
     if (!gala) return;
-    if (!stripeReady && gocardlessReady) setModePaiement("sepa");
-    if (stripeReady && !gocardlessReady) setModePaiement("stripe");
-  }, [gala, stripeReady, gocardlessReady]);
+    const url = gala.publicDonationUrl || window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: displayTitle, text: displaySubtitle, url });
+        setShareStatus("Partage ouvert");
+      } else {
+        await navigator.clipboard.writeText(url);
+        setShareStatus("Lien copié");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareStatus("Lien copié");
+      } catch {
+        setShareStatus("Copie impossible");
+      }
+    }
+    window.setTimeout(() => setShareStatus(""), 2200);
+  }
 
-  useEffect(() => {
-    if (mode === "payer" && nbFois) setNbFois(null);
-  }, [mode, nbFois]);
-
-  async function handlePayer(e: React.FormEvent) {
-    e.preventDefault();
-    if (!montantFinal || parseFloat(montantFinal) <= 0) return;
+  async function handlePayer(event: React.FormEvent) {
+    event.preventDefault();
+    if (loading) return;
+    if (!Number.isFinite(montantNombre) || montantNombre <= 0 || montantNombre > 1_000_000) {
+      setCheckoutError("Choisissez un montant compris entre 1 € et 1 000 000 €.");
+      return;
+    }
     setCheckoutError("");
     setLoading(true);
 
-    const payload = {
-      montant: String(totalEngagement), montantMensuel: montantFinal, nomAffiche: anonyme ? "" : nomAffiche, anonyme,
-      message,
-      type: typePersonne,
-      prenom: typePersonne === "particulier" ? prenom : prenomContact,
-      nom: typePersonne === "particulier" ? nom : nomContact,
-      raisonSociale: typePersonne === "societe" ? raisonSociale : "",
-      siret: typePersonne === "societe" ? siret : "",
-      email, adresse, codePostal, ville, cerfaDemande: true,
-      modePaiement,
-      nbFois: nbFois || 1,
-      mensualiteDebutMode: gala?.mensualiteDebutMode,
-      mensualiteDebutDate: gala?.mensualiteDebutDate,
-    };
-
-    const res = await fetch(`/api/gala/${id}/checkout`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json();
-    if (data.url) window.location.href = data.url;
-    else {
-      setCheckoutError(data.error || "Impossible de lancer le paiement.");
+    try {
+      const payload = {
+        montant: String(montantNombre), montantMensuel: String(montantNombre),
+        nomAffiche: anonyme ? "" : nomAffiche, anonyme, message, type: typePersonne,
+        prenom: typePersonne === "particulier" ? prenom : prenomContact,
+        nom: typePersonne === "particulier" ? nom : nomContact,
+        raisonSociale: typePersonne === "societe" ? raisonSociale : "",
+        siret: typePersonne === "societe" ? siret : "", email,
+        adresse: cerfaDemande ? adresse : "", codePostal: cerfaDemande ? codePostal : "",
+        ville: cerfaDemande ? ville : "", cerfaDemande, modePaiement: selectedPaymentMode, nbFois: 1,
+      };
+      const res = await fetch(`/api/gala/${id}/checkout`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "Impossible de lancer le paiement.");
+      window.location.href = data.url;
+    } catch (error) {
+      setCheckoutError(error instanceof Error ? error.message : "Impossible de lancer le paiement.");
       setLoading(false);
     }
   }
 
-  async function handlePromesse(e: React.FormEvent) {
-    e.preventDefault();
-    if (!montantFinal || !dateRappel) return;
-    setLoading(true);
-    await fetch(`/api/gala/${id}/promesses`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        montant: String(totalEngagement), montantMensuel: montantFinal, nomAffiche: anonyme ? "" : nomAffiche, anonyme,
-        message,
-        type: typePersonne,
-        prenom: typePersonne === "particulier" ? prenom : prenomContact,
-        nom: typePersonne === "particulier" ? nom : nomContact,
-        raisonSociale: typePersonne === "societe" ? raisonSociale : "",
-        siret, telephone, email, adresse, codePostal, ville, cerfaDemande: true, dateRappel,
-      }),
-    });
-    setLoading(false);
-    setPromesseOk(true);
+  if (!gala) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-blue-50 p-4">
+        {loadError ? <div role="alert" className="max-w-md rounded-2xl border border-red-200 bg-white p-5 text-sm text-red-700 shadow-sm">{loadError}</div>
+          : <Loader2 className="h-9 w-9 animate-spin text-blue-700" aria-label="Chargement" />}
+      </main>
+    );
   }
 
-  if (!gala) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-      <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
-  if (promesseOk) return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 max-w-sm w-full text-center">
-        <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CalendarClock size={32} className="text-emerald-600" />
-        </div>
-        <h2 className="text-xl font-bold text-slate-800 mb-2">Promesse enregistrée !</h2>
-        <p className="text-slate-500 text-sm">Merci pour votre engagement. L'association vous contactera le <strong>{new Date(dateRappel).toLocaleDateString("fr-FR")}</strong> pour finaliser votre don de <strong>{fmt(totalEngagement)}</strong>.</p>
-      </div>
-    </div>
-  );
-
-  const pct = Math.min(100, Math.round((gala.totalCollecte / gala.objectif) * 100));
+  const displaySummary = featured ? FEATURED_COPY.summary : (gala.description || "Chaque participation compte.");
+  const detailParagraphs = featured ? FEATURED_COPY.details : (gala.description ? [gala.description] : []);
+  const pct = gala.objectif > 0 ? Math.min(100, Math.round((gala.totalCollecte / gala.objectif) * 100)) : 0;
   const donsRecents = (gala.dons || []).slice(0, 8);
-  const donateurLabel = (don: Don) => don.anonyme ? "Donateur anonyme" : (don.nomAffiche || "Donateur");
+  const eventDateValue = new Date(gala.dateEvenement);
+  const eventDay = new Intl.DateTimeFormat("fr-FR", { day: "numeric", timeZone: "Europe/Paris" }).format(eventDateValue);
+  const eventMonthYear = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "Europe/Paris" }).format(eventDateValue);
+  const eventDate = `${eventDay === "1" ? "1er" : eventDay} ${eventMonthYear}`;
   const backgroundImage = getBackgroundImage(gala);
+  const organizer = gala.organizer;
+  const showOrganizer = !!organizer && !!(organizer.nom || organizer.presentation || organizer.email || organizer.telephone || organizer.remiseFondsDescription);
+  const buttonLabel = montantNombre > 0 ? `Donner ${fmt(montantNombre)}` : "Choisir un montant";
 
   return (
-    <div className="min-h-screen bg-slate-950 relative">
-      <div className="fixed inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${backgroundImage})` }} />
-      <div className="fixed inset-0 bg-slate-950/70" />
-      <div className="fixed inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.25),rgba(15,23,42,0.9))]" />
-
-      <div className="relative mx-auto max-w-7xl px-4 py-5 md:px-8 md:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.05fr)_minmax(390px,0.75fr)] gap-5 lg:gap-6 items-start">
-          <section className="space-y-4 lg:sticky lg:top-6">
-            <div className="min-h-[46vh] md:min-h-[58vh] flex flex-col justify-end rounded-3xl overflow-hidden border border-white/15 bg-black/20 shadow-2xl">
-              <div className="p-5 md:p-8 text-white">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/20 px-3 py-1 text-xs font-semibold backdrop-blur">
-                  <Heart size={13} /> Campagne de dons
-                </div>
-                <h1 className="mt-4 text-3xl md:text-5xl font-black leading-tight">{gala.titre}</h1>
-                {gala.lieu && <p className="mt-2 text-sm md:text-base text-white/75">{gala.lieu}</p>}
-                <div className="mt-5 grid grid-cols-2 gap-3 max-w-xl">
-                  <div className="rounded-2xl bg-white/14 border border-white/15 p-4 backdrop-blur">
-                    <p className="text-xs text-white/65">Collecté</p>
-                    <p className="text-2xl font-black">{fmt(gala.totalCollecte)}</p>
-                  </div>
-                  <div className="rounded-2xl bg-white/14 border border-white/15 p-4 backdrop-blur">
-                    <p className="text-xs text-white/65">Objectif</p>
-                    <p className="text-2xl font-black">{fmt(gala.objectif)}</p>
-                  </div>
-                </div>
-                <div className="mt-4 max-w-xl">
-                  <div className="flex justify-between text-xs text-white/70 mb-1">
-                    <span>{pct}% accompli</span>
-                    <span>{fmt(Math.max(gala.objectif - gala.totalCollecte, 0))} restant</span>
-                  </div>
-                  <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full bg-white transition-all duration-700" style={{ width: `${Math.max(pct, 1)}%` }} />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Cause */}
-            {(gala.description || donsRecents.length > 0) && (
-              <div className="bg-white/95 backdrop-blur rounded-3xl border border-white/40 shadow-xl p-5 md:p-6">
-                {gala.description && (
-                  <>
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{ backgroundColor: `${gala.couleurPrimaire}18`, color: gala.couleurPrimaire }}>
-                        <Heart size={17} />
-                      </div>
-                      <h2 className="font-bold text-slate-800">La cause</h2>
-                    </div>
-                    <p className="text-sm md:text-base text-slate-600 leading-relaxed whitespace-pre-line">{gala.description}</p>
-                  </>
-                )}
-
-                {donsRecents.length > 0 && (
-                  <div className={gala.description ? "mt-5 pt-5 border-t border-slate-100" : ""}>
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <h2 className="font-bold text-slate-800 text-sm">Dons récents</h2>
-                      <span className="text-xs font-semibold text-slate-400">{donsRecents.length} affichés</span>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {donsRecents.map(don => (
-                        <div key={don.id} className="rounded-xl bg-slate-50 border border-slate-100 p-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="text-sm font-bold text-slate-700 truncate">{donateurLabel(don)}</p>
-                              <p className="text-[11px] text-slate-400">{new Date(don.createdAt).toLocaleDateString("fr-FR")}</p>
-                            </div>
-                            <span className="text-sm font-black shrink-0" style={{ color: gala.couleurPrimaire }}>{fmt(don.montant)}</span>
-                          </div>
-                          {don.message && (
-                            <p className="text-xs text-slate-600 mt-2 leading-relaxed flex gap-1.5">
-                              <MessageCircle size={13} className="shrink-0 mt-0.5 text-slate-400" />
-                              <span>{don.message}</span>
-                            </p>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {gala.videoUrl && getVideoEmbedUrl(gala.videoUrl) && (
-              <div className="rounded-3xl overflow-hidden shadow-xl border border-white/20 bg-black" style={{ aspectRatio: "16/9" }}>
-                <iframe src={getVideoEmbedUrl(gala.videoUrl)!} className="w-full h-full" allowFullScreen />
-              </div>
-            )}
-          </section>
-
-          <section className="space-y-4">
-        <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: gala.couleurPrimaire }}>
-              <span className="text-white font-bold text-lg">{gala.titre[0]}</span>
-            </div>
-            <div>
-              <h1 className="font-bold text-slate-800 text-lg">{gala.titre}</h1>
-              {gala.lieu && <p className="text-slate-400 text-sm">{gala.lieu}</p>}
-            </div>
+    <main className="min-h-screen bg-[linear-gradient(180deg,#eff6ff_0%,#f8fafc_38%,#ffffff_100%)] text-slate-900">
+      <div className="mx-auto grid max-w-7xl gap-5 px-3 py-3 sm:px-5 sm:py-5 lg:grid-cols-[minmax(0,1.12fr)_minmax(390px,0.78fr)] lg:gap-7 lg:px-8 lg:py-8">
+        <section className="relative min-h-[520px] overflow-hidden rounded-2xl bg-slate-900 shadow-xl sm:min-h-[590px] lg:col-start-1 lg:row-start-1 lg:min-h-[680px]" aria-label="Photo de la campagne">
+          <div className="absolute inset-0 bg-cover bg-[position:64%_center] sm:bg-[position:66%_center] lg:bg-[position:62%_center]" style={{ backgroundImage: `url(${backgroundImage})` }} />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.03)_18%,rgba(15,23,42,0.16)_52%,rgba(15,23,42,0.92)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-[49%] bg-slate-950 sm:hidden" />
+          <div className="absolute inset-x-0 bottom-0 max-w-3xl p-5 text-white sm:p-8 lg:p-10">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/35 px-3 py-1.5 text-xs font-bold backdrop-blur-sm"><Heart size={13} aria-hidden="true" /> Campagne solidaire</div>
+            <h1 className="max-w-2xl text-3xl font-extrabold leading-tight sm:text-5xl lg:max-w-[56%] lg:text-4xl">{displayTitle}</h1>
+            <p className="mt-3 max-w-xl text-base font-medium leading-relaxed text-white/90 sm:text-lg lg:max-w-[56%]">{displaySubtitle}</p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-extrabold text-blue-950 shadow-sm"><CalendarDays size={16} aria-hidden="true" /> Mariage prévu le {eventDate}</div>
           </div>
-          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 text-sm mb-2">
-            <span className="font-bold text-slate-800">{fmt(gala.totalCollecte)}</span>
-            <span className="text-slate-400">{pct}% de {fmt(gala.objectif)}</span>
-          </div>
-          <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all duration-700" style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: gala.couleurPrimaire }} />
-          </div>
-          <div className="flex justify-between text-xs text-slate-300 mt-1">
-            <span>25%</span><span>50%</span><span>75%</span><span>100%</span>
-          </div>
-        </div>
+        </section>
 
-        {/* Montant */}
-        <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5">
-          <p className="text-sm font-semibold text-slate-600 mb-3">Montant du don</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-            {MONTANTS.map(m => (
-              <button key={m} type="button"
-                onClick={() => { setMontant(String(m)); setMontantLibre(""); }}
-                className="py-3 rounded-xl text-sm font-semibold transition-all"
-                style={montant === String(m) ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                {m}€
-              </button>
-            ))}
-          </div>
-          <input type="number" value={montantLibre} onChange={e => { setMontantLibre(e.target.value); setMontant(""); }}
-            placeholder="Autre montant (€)" min="1"
-            className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-
-          {/* Mensualités */}
-          {gala.mensualiteEnabled && mode === "payer" && (
-            <div className="mt-3 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2 text-xs text-amber-800 leading-relaxed">
-              Le paiement en ligne est actuellement encaissé en don unique. Pour un engagement sur plusieurs mois, choisissez "Promesse de don" ; le vrai prélèvement mensuel GoCardless sera branché dans l'étape suivante.
+        <section className="rounded-2xl border border-blue-100 bg-white p-5 shadow-xl sm:p-7 lg:sticky lg:top-5 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          <div className="border-b border-slate-100 pb-5">
+            <p className="text-sm leading-relaxed text-slate-600">{displaySummary}</p>
+            <div className="mt-5 flex items-end justify-between gap-4">
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Collecté</p><p className="text-3xl font-extrabold text-blue-950">{fmt(gala.totalCollecte)}</p></div>
+              <p className="text-right text-sm font-semibold text-slate-600">Objectif {fmt(gala.objectif)}</p>
             </div>
-          )}
-
-          {showInstallmentOptions && (
-            <div className="pt-2 border-t border-slate-100">
-              <p className="text-xs font-semibold text-slate-500 mb-2">Engagement sur plusieurs mois</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button type="button" onClick={() => setNbFois(null)}
-                  className="py-2.5 rounded-xl text-xs font-semibold transition-all"
-                  style={nbFois === null ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                  Don unique — {fmt(montantMensuel)}
-                </button>
-                {mensualiteOpts.map(n => (
-                  <button key={n} type="button" onClick={() => setNbFois(n)}
-                    className="py-2.5 rounded-xl text-xs font-semibold transition-all"
-                    style={nbFois === n ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                    {fmt(montantMensuel)}/mois pendant {n} mois
-                  </button>
-                ))}
-              </div>
-              {nbFois && (
-                <div className="mt-3 rounded-xl bg-slate-50 border border-slate-100 p-3 text-center">
-                  <p className="text-xs text-slate-500">Engagement total</p>
-                  <p className="text-lg font-black text-slate-800">{fmt(totalEngagement)}</p>
-                  <p className="text-xs text-slate-400">{fmt(montantMensuel)} x {nbFois} mois</p>
-                </div>
-              )}
-              {nbFois && gala.mensualiteDebutMode === "date" && gala.mensualiteDebutDate && (
-                <p className="text-xs text-slate-400 mt-2 text-center">
-                  Premier prélèvement le {new Date(gala.mensualiteDebutDate).toLocaleDateString("fr-FR")}
-                </p>
-              )}
-              {nbFois && gala.mensualiteDebutMode === "immediat" && (
-                <p className="text-xs text-slate-400 mt-2 text-center">
-                  1er prélèvement aujourd'hui, puis le 1er de chaque mois
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Mode : payer maintenant ou promesse */}
-        {gala.promesseEnabled && (
-          <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5">
-            <p className="text-sm font-semibold text-slate-600 mb-3">Je souhaite…</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button type="button" onClick={() => setMode("payer")}
-                className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                style={mode === "payer" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                <CreditCard size={15} /> Payer maintenant
-              </button>
-              <button type="button" onClick={() => setMode("promesse")}
-                className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                style={mode === "promesse" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                <CalendarClock size={15} /> Promesse de don
-              </button>
-            </div>
-            {mode === "promesse" && (
-              <div className="mt-3 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-                <p className="text-xs text-amber-700">Vous vous engagez à faire ce don. L'association vous contactera à la date choisie pour finaliser le paiement.</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        <form onSubmit={mode === "payer" ? handlePayer : handlePromesse} className="space-y-4">
-
-          {/* Infos personnelles */}
-          <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
-            <p className="text-sm font-semibold text-slate-600">Vos informations</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <button type="button" onClick={() => setTypePersonne("particulier")}
-                className="py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                style={typePersonne === "particulier" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                <User size={14} /> Particulier
-              </button>
-              <button type="button" onClick={() => setTypePersonne("societe")}
-                className="py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                style={typePersonne === "societe" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                <Building2 size={14} /> Société
-              </button>
-            </div>
-
-            {typePersonne === "particulier" ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input required value={prenom} onChange={e => setPrenom(e.target.value)} placeholder="Prénom *"
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <input required value={nom} onChange={e => setNom(e.target.value)} placeholder="Nom *"
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <input required value={raisonSociale} onChange={e => setRaisonSociale(e.target.value)} placeholder="Raison sociale *"
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <input value={siret} onChange={e => setSiret(e.target.value)} placeholder="SIRET (optionnel)"
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <input required value={prenomContact} onChange={e => setPrenomContact(e.target.value)} placeholder="Prénom contact *"
-                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  <input required value={nomContact} onChange={e => setNomContact(e.target.value)} placeholder="Nom contact *"
-                    className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-              </div>
-            )}
-
-            <input value={nomAffiche} onChange={e => setNomAffiche(e.target.value)}
-              placeholder="Nom à afficher sur l'écran (optionnel)"
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={anonyme} />
-            <textarea value={message} onChange={e => setMessage(e.target.value)}
-              placeholder="Message de soutien affiché avec votre don (optionnel)"
-              rows={3}
-              className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={anonyme} onChange={e => setAnonyme(e.target.checked)} className="w-4 h-4" />
-              <span className="text-sm text-slate-600">Afficher anonymement sur l'écran</span>
-            </label>
-          </div>
-
-          {/* Promesse : date + téléphone */}
-          {mode === "promesse" && (
-            <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
-              <p className="text-sm font-semibold text-slate-600">Date de rappel</p>
-              <input required type="date" value={dateRappel} onChange={e => setDateRappel(e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <input required type="tel" value={telephone} onChange={e => setTelephone(e.target.value)}
-                placeholder="Téléphone *"
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-          )}
-
-          {/* CERFA */}
-          <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <FileText size={16} className="text-emerald-600" />
-              <span className="text-sm font-semibold text-slate-700 leading-snug">Reçu fiscal généré automatiquement</span>
-            </div>
-            <div className="space-y-2 pt-1">
-              <input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email *"
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <input required value={adresse} onChange={e => setAdresse(e.target.value)} placeholder="Adresse *"
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input required value={codePostal} onChange={e => setCodePostal(e.target.value)} placeholder="Code postal *"
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <input required value={ville} onChange={e => setVille(e.target.value)} placeholder="Ville *"
-                  className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <p className="text-xs text-slate-400">Après encaissement, votre CERFA sera créé et envoyé automatiquement par email.</p>
+            <div className="mt-3 h-3 overflow-hidden rounded-full bg-blue-100" aria-label={`${pct}% de l'objectif atteint`}><div className="h-full rounded-full bg-blue-700 transition-all duration-700" style={{ width: `${Math.max(pct, 1)}%` }} /></div>
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <span className="text-sm font-bold text-blue-800">{pct}% atteint</span>
+              <button type="button" onClick={handleShare} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-bold text-blue-800 transition hover:bg-blue-100 focus:outline-none focus:ring-4 focus:ring-blue-100">{shareStatus === "Lien copié" ? <Check size={16} /> : <Share2 size={16} />}{shareStatus || "Partager la collecte"}</button>
             </div>
           </div>
 
-          {/* Paiement (mode payer uniquement) */}
-          {mode === "payer" && (
-            <div className="bg-white/96 backdrop-blur rounded-3xl border border-white/50 shadow-xl p-5 space-y-3">
-              <p className="text-sm font-semibold text-slate-600">Moyen de paiement</p>
-              {stripeReady || gocardlessReady ? (
-                <div className={`grid grid-cols-1 ${stripeReady && gocardlessReady ? "sm:grid-cols-2" : ""} gap-2`}>
-                  {stripeReady && (
-                    <button type="button" onClick={() => setModePaiement("stripe")}
-                      className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                      style={modePaiement === "stripe" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                      <CreditCard size={15} /> Carte bancaire
-                    </button>
-                  )}
-                  {gocardlessReady && (
-                    <button type="button" onClick={() => setModePaiement("sepa")}
-                      className="py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
-                      style={modePaiement === "sepa" ? { backgroundColor: gala.couleurPrimaire, color: "#fff" } : { backgroundColor: "#f1f5f9", color: "#334155" }}>
-                      <Building2 size={15} /> Pay by Bank
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 text-xs text-amber-700">
-                  Aucun moyen de paiement en ligne n'est activé pour cette campagne.
-                </div>
-              )}
-              {modePaiement === "sepa" && (
-                <div className="bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-blue-700">
-                  Le donateur valide le paiement directement dans son application bancaire. Aucun mandat SEPA n'est cree.
-                </div>
-              )}
-              {checkoutError && (
-                <div className="bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-xs text-red-700">
-                  {checkoutError}
-                </div>
-              )}
+          <form onSubmit={handlePayer} className="mt-5 space-y-5">
+            <fieldset>
+              <legend className="text-base font-extrabold text-slate-900">Choisissez votre montant</legend>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                {MONTANTS.map(value => {
+                  const selected = montant === String(value) && !montantLibre;
+                  return <button key={value} type="button" aria-pressed={selected} onClick={() => chooseAmount(value)} className={`min-h-12 rounded-xl border-2 px-2 text-base font-extrabold transition focus:outline-none focus:ring-4 focus:ring-blue-100 ${selected ? "border-blue-700 bg-blue-700 text-white shadow-md" : "border-blue-100 bg-blue-50 text-blue-950 hover:border-blue-300 hover:bg-blue-100"}`}>{value} €</button>;
+                })}
+              </div>
+              <Field label="Autre montant">
+                <div className="relative mt-3"><input type="number" min="1" max="1000000" step="1" inputMode="numeric" value={montantLibre} onChange={event => changeCustomAmount(event.target.value)} placeholder="Montant libre" aria-describedby="amount-help" className={`${inputClass} pr-10`} /><span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 font-bold text-slate-500">€</span></div>
+              </Field>
+              <p id="amount-help" className="mt-2 text-xs text-slate-500">Montant compris entre 1 € et 1 000 000 €.</p>
+            </fieldset>
+
+            <div className="border-t border-slate-100 pt-5">
+              <h2 className="text-base font-extrabold text-slate-900">Vos informations</h2>
+              <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl bg-slate-100 p-1" role="group" aria-label="Type de donateur">
+                <button type="button" onClick={() => setTypePersonne("particulier")} aria-pressed={typePersonne === "particulier"} className={`min-h-11 rounded-lg text-sm font-bold transition ${typePersonne === "particulier" ? "bg-white text-blue-800 shadow-sm" : "text-slate-600"}`}>Particulier</button>
+                <button type="button" onClick={() => setTypePersonne("societe")} aria-pressed={typePersonne === "societe"} className={`min-h-11 rounded-lg text-sm font-bold transition ${typePersonne === "societe" ? "bg-white text-blue-800 shadow-sm" : "text-slate-600"}`}>Société</button>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                {typePersonne === "particulier" ? <><Field label="Prénom"><input required autoComplete="given-name" value={prenom} onChange={event => setPrenom(event.target.value)} className={inputClass} /></Field><Field label="Nom"><input required autoComplete="family-name" value={nom} onChange={event => setNom(event.target.value)} className={inputClass} /></Field></>
+                  : <><Field label="Raison sociale"><input required autoComplete="organization" value={raisonSociale} onChange={event => setRaisonSociale(event.target.value)} className={inputClass} /></Field><Field label="SIRET"><input required inputMode="numeric" value={siret} onChange={event => setSiret(event.target.value)} className={inputClass} /></Field><Field label="Prénom du contact"><input required autoComplete="given-name" value={prenomContact} onChange={event => setPrenomContact(event.target.value)} className={inputClass} /></Field><Field label="Nom du contact"><input required autoComplete="family-name" value={nomContact} onChange={event => setNomContact(event.target.value)} className={inputClass} /></Field></>}
+              </div>
+              <div className="mt-4"><Field label="Email"><input required type="email" autoComplete="email" value={email} onChange={event => setEmail(event.target.value)} className={inputClass} /></Field></div>
             </div>
-          )}
 
-          <button type="submit" disabled={loading || !montantFinal || parseFloat(montantFinal) <= 0 || (mode === "payer" && !stripeReady && !gocardlessReady)}
-            className="w-full py-4 rounded-2xl font-bold text-lg text-white flex items-center justify-center gap-2 transition-all disabled:opacity-50"
-            style={{ backgroundColor: gala.couleurPrimaire }}>
-            {loading && <Loader2 size={18} className="animate-spin" />}
-            {mode === "promesse"
-              ? `Enregistrer ma promesse de ${montantFinal ? fmt(totalEngagement) : "don"}`
-              : `Faire un don de ${montantFinal ? fmt(totalEngagement) : "…"}`}
-          </button>
+            {receiptAvailable && <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+              <label className="flex cursor-pointer items-start gap-3 text-sm font-bold text-blue-950"><input type="checkbox" checked={cerfaDemande} onChange={event => setCerfaDemande(event.target.checked)} className="mt-0.5 h-5 w-5 rounded border-blue-300 text-blue-700 focus:ring-blue-500" /><span>Je souhaite recevoir un reçu fiscal</span></label>
+              {cerfaDemande && <div className="mt-4 grid gap-4"><p className="text-xs leading-relaxed text-blue-900">Votre adresse est nécessaire pour établir le reçu fiscal. Celui-ci sera envoyé par email après confirmation du paiement.</p><Field label="Adresse"><input required autoComplete="street-address" value={adresse} onChange={event => setAdresse(event.target.value)} className={inputClass} /></Field><div className="grid grid-cols-2 gap-4"><Field label="Code postal"><input required autoComplete="postal-code" inputMode="numeric" value={codePostal} onChange={event => setCodePostal(event.target.value)} className={inputClass} /></Field><Field label="Ville"><input required autoComplete="address-level2" value={ville} onChange={event => setVille(event.target.value)} className={inputClass} /></Field></div></div>}
+            </div>}
 
-          <p className="text-center text-xs text-white/75 pb-4 flex items-center justify-center gap-1.5">
-            <ShieldCheck size={13} /> Paiement sécurisé — vos données ne sont jamais stockées sur nos serveurs
-          </p>
-        </form>
-          </section>
-        </div>
+            <details className="group rounded-xl border border-slate-200 bg-slate-50">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 text-sm font-extrabold text-slate-800 focus:outline-none focus:ring-4 focus:ring-blue-100">Personnaliser mon don<ChevronDown size={18} className="transition group-open:rotate-180" aria-hidden="true" /></summary>
+              <div className="space-y-4 border-t border-slate-200 p-4">
+                <Field label="Nom affiché publiquement"><input value={nomAffiche} onChange={event => setNomAffiche(event.target.value)} disabled={anonyme} className={inputClass} placeholder="Facultatif" /></Field>
+                <Field label="Message de soutien"><textarea rows={3} value={message} onChange={event => setMessage(event.target.value)} className={`${inputClass} resize-y`} placeholder="Facultatif" /></Field>
+                <label className="flex cursor-pointer items-start gap-3 text-sm font-bold text-slate-700"><input type="checkbox" checked={anonyme} onChange={event => setAnonyme(event.target.checked)} className="mt-0.5 h-5 w-5 rounded border-slate-300 text-blue-700 focus:ring-blue-500" /><span>Ne pas afficher mon nom publiquement<span className="mt-1 block text-xs font-normal leading-relaxed text-slate-500">Cette option masque votre nom sur la page publique. L’organisateur et le prestataire de paiement reçoivent toujours les informations nécessaires au traitement du don.</span></span></label>
+              </div>
+            </details>
+
+            <fieldset>
+              <legend className="text-sm font-extrabold text-slate-900">Moyen de paiement</legend>
+              {stripeReady || gocardlessReady ? <div className={`mt-3 grid gap-2 ${stripeReady && gocardlessReady ? "grid-cols-2" : "grid-cols-1"}`}>
+                {stripeReady && <button type="button" onClick={() => setModePaiement("stripe")} aria-pressed={selectedPaymentMode === "stripe"} className={`min-h-12 rounded-xl border-2 px-3 text-sm font-bold transition ${selectedPaymentMode === "stripe" ? "border-blue-700 bg-blue-700 text-white" : "border-slate-200 bg-white text-slate-700"}`}><span className="flex items-center justify-center gap-2"><CreditCard size={17} /> Carte bancaire</span></button>}
+                {gocardlessReady && <button type="button" onClick={() => setModePaiement("sepa")} aria-pressed={selectedPaymentMode === "sepa"} className={`min-h-12 rounded-xl border-2 px-3 text-sm font-bold transition ${selectedPaymentMode === "sepa" ? "border-blue-700 bg-blue-700 text-white" : "border-slate-200 bg-white text-slate-700"}`}><span className="flex items-center justify-center gap-2"><Building2 size={17} /> Pay by Bank</span></button>}
+              </div> : <p role="alert" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Aucun moyen de paiement en ligne n’est actuellement disponible.</p>}
+              <p className="mt-3 flex gap-2 text-xs leading-relaxed text-slate-500"><ShieldCheck size={15} className="mt-0.5 shrink-0" />{selectedPaymentMode === "sepa" ? "Le paiement est validé dans votre banque via GoCardless." : "Le paiement par carte est traité par Stripe sur son interface sécurisée."}</p>
+            </fieldset>
+
+            {checkoutError && <div role="alert" aria-live="assertive" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm font-semibold text-red-700">{checkoutError}</div>}
+            <button type="submit" disabled={loading || !Number.isFinite(montantNombre) || montantNombre <= 0 || (!stripeReady && !gocardlessReady)} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 text-lg font-extrabold text-white shadow-lg shadow-blue-200 transition hover:bg-blue-800 focus:outline-none focus:ring-4 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:shadow-none">{loading && <Loader2 size={19} className="animate-spin" />}{loading ? "Redirection…" : buttonLabel}</button>
+          </form>
+        </section>
+
+        <section className="space-y-5 lg:col-start-1 lg:row-start-2">
+          {detailParagraphs.length > 0 && <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-7"><h2 className="flex items-center gap-2 text-xl font-extrabold text-blue-950"><Heart size={20} /> Pourquoi cette collecte ?</h2><div className="mt-4 space-y-4 text-[15px] leading-7 text-slate-600">{detailParagraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div></article>}
+          {showOrganizer && organizer && <article className="rounded-2xl border border-blue-100 bg-blue-950 p-5 text-white shadow-sm sm:p-7"><h2 className="text-xl font-extrabold">Qui organise cette collecte ?</h2>{organizer.nom && <p className="mt-3 text-lg font-bold">{organizer.nom}</p>}{organizer.presentation && <p className="mt-2 leading-relaxed text-blue-100">{organizer.presentation}</p>}{organizer.remiseFondsDescription && <p className="mt-4 rounded-xl bg-white/10 p-4 text-sm leading-relaxed text-blue-50">{organizer.remiseFondsDescription}</p>}{(organizer.email || organizer.telephone) && <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold text-blue-100">{organizer.email && <a href={`mailto:${organizer.email}`} className="inline-flex items-center gap-2 hover:text-white"><Mail size={15} /> {organizer.email}</a>}{organizer.telephone && <span>{organizer.telephone}</span>}</div>}</article>}
+          {donsRecents.length > 0 && <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><h2 className="text-xl font-extrabold text-slate-900">Dons récents</h2><div className="mt-4 grid gap-3 sm:grid-cols-2">{donsRecents.map(don => <div key={don.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-800">{don.anonyme ? "Donateur anonyme" : (don.nomAffiche || "Donateur")}</p><p className="mt-0.5 text-xs text-slate-500">{new Date(don.createdAt).toLocaleDateString("fr-FR")}</p></div><span className="shrink-0 font-extrabold text-blue-800">{fmt(don.montant)}</span></div>{don.message && <p className="mt-3 flex gap-2 text-sm leading-relaxed text-slate-600"><MessageCircle size={15} className="mt-0.5 shrink-0 text-blue-600" /> {don.message}</p>}</div>)}</div></article>}
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
