@@ -123,7 +123,7 @@ test.describe("Mobile — Mise en page", () => {
 test.describe("Mobile — Authentification", () => {
   test("la page de connexion s'affiche correctement sur mobile", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByText(/CRM Cerfa|Trouma-Pro/)).toBeVisible();
+    await expect(page.getByText("Trouma Pro", { exact: true })).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();
     await expect(page.locator('input[type="password"]')).toBeVisible();
     await expect(page.locator('button[type="submit"]')).toBeVisible();

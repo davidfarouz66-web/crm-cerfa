@@ -7,7 +7,7 @@ test.describe("Admin (super-admin)", () => {
   });
 
   test("la page admin est accessible pour un admin", async ({ page }) => {
-    const res = await page.goto("/admin");
+    await page.goto("/admin");
     // Soit la page charge, soit on est redirigé (non-admin)
     const url = page.url();
     if (url.includes("/admin")) {

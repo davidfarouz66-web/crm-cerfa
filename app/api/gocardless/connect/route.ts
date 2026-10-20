@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { buildGoCardlessOAuthUrl } from "@/lib/gocardless";
 import { getPublicBaseUrl } from "@/lib/public-url";
@@ -6,7 +6,7 @@ import { requireTenant, rejectIfReadOnly } from "@/lib/tenant";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const t = await requireTenant();
   if (t instanceof NextResponse) return t;
   const ro = rejectIfReadOnly(t);
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       select: { nom: true, email: true },
     });
 
-    const origin = getPublicBaseUrl(new URL(req.url).origin);
+    const origin = getPublicBaseUrl();
     const redirectUri = `${origin}/api/gocardless/callback`;
     const url = buildGoCardlessOAuthUrl({
       tenantId: t.tenantId,

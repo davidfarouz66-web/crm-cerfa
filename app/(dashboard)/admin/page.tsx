@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Building2, Users, FileText, Euro, AlertTriangle, CheckCircle, Clock, Search, UserCheck, UserX, Hourglass, Eye } from "lucide-react";
+import { FileText, Euro, AlertTriangle, CheckCircle, Clock, Search, UserCheck, UserX, Hourglass, Eye } from "lucide-react";
 
 interface Tenant {
   id: string;

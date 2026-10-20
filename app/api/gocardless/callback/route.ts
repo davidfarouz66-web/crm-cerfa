@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   const error = url.searchParams.get("error");
-  const origin = getPublicBaseUrl(url.origin);
+  const origin = getPublicBaseUrl();
 
   if (error) {
     return NextResponse.redirect(`${origin}/parametres?tab=paiements&gocardless=refused`);

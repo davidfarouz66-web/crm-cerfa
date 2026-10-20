@@ -1,16 +1,14 @@
 import { writeFileSync } from "fs";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { execFileSync } from "child_process";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Inline minimal version of generateMecenaPDF for testing
-// We'll import via tsx instead
-import { execSync } from "child_process";
+const projectRoot = path.resolve(__dirname, "..");
+const generatorPath = path.join(projectRoot, "lib/pdf-mecena.ts");
 
 const script = `
-import { generateMecenaPDF } from "../lib/pdf-mecena";
+import { generateMecenaPDF } from ${JSON.stringify(generatorPath)};
 import { writeFileSync } from "fs";
 
 const data = {
@@ -51,4 +49,4 @@ console.log("PDF généré : /tmp/test-mecena.pdf");
 `;
 
 writeFileSync("/tmp/gen-mecena.ts", script);
-execSync("cd /Users/davidfarouz/Documents/site/crm-cerfa && npx tsx /tmp/gen-mecena.ts", { stdio: "inherit" });
+execFileSync("npx", ["tsx", "/tmp/gen-mecena.ts"], { cwd: projectRoot, stdio: "inherit" });

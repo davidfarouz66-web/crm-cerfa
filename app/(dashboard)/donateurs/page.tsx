@@ -25,23 +25,44 @@ export default function DonateursPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    setPage(1);
-  }, [q]);
-
-  useEffect(() => {
-    setLoading(true);
+    const controller = new AbortController();
     const timeout = setTimeout(() => {
-      fetch(`/api/donateurs?q=${encodeURIComponent(q)}&page=${page}`)
-        .then((r) => r.json())
+      fetch(`/api/donateurs?q=${encodeURIComponent(q)}&page=${page}`, { signal: controller.signal })
+        .then((r) => {
+          if (!r.ok) throw new Error("Impossible de charger les donateurs");
+          return r.json();
+        })
         .then((d) => {
           setDonateurs(d.data);
           setTotal(d.total);
           setTotalPages(d.totalPages);
-          setLoading(false);
+        })
+        .catch((error) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setDonateurs([]);
+          setTotal(0);
+          setTotalPages(1);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
         });
     }, 300);
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [q, page]);
+
+  function handleSearch(value: string) {
+    setLoading(true);
+    setQ(value);
+    setPage(1);
+  }
+
+  function changePage(nextPage: number) {
+    setLoading(true);
+    setPage(nextPage);
+  }
 
   const getNom = (d: Donateur) =>
     d.type === "entreprise"
@@ -70,7 +91,7 @@ export default function DonateursPage() {
         <input
           type="text"
           value={q}
-          onChange={(e) => setQ(e.target.value)}
+          onChange={(e) => handleSearch(e.target.value)}
           placeholder="Rechercher un donateur..."
           className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-800 text-sm"
         />
@@ -146,7 +167,7 @@ export default function DonateursPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => changePage(Math.max(1, page - 1))}
                 disabled={page === 1}
                 className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
@@ -154,7 +175,7 @@ export default function DonateursPage() {
               </button>
               <span className="text-sm text-slate-500">Page {page} / {totalPages}</span>
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => changePage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
                 className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >

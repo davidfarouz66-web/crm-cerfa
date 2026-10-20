@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Baby,
   CalendarDays,
@@ -133,6 +135,7 @@ function getProgress(gala: Gala) {
 }
 
 export default function GalaPage() {
+  const router = useRouter();
   const initialCategory = "tous";
   const [galas, setGalas] = useState<Gala[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,7 +156,7 @@ export default function GalaPage() {
     fetch("/api/gala")
       .then(async r => {
         if (r.status === 401 || r.redirected) {
-          window.location.href = `/login?callbackUrl=${encodeURIComponent("/campagnes")}`;
+          router.push(`/login?callbackUrl=${encodeURIComponent("/campagnes")}`);
           return [];
         }
         const d = await readJsonResponse(r);
@@ -163,7 +166,7 @@ export default function GalaPage() {
       .then(d => { setGalas(d); setError(""); })
       .catch(e => setError(e instanceof Error ? e.message : "Chargement des campagnes impossible"))
       .finally(() => setLoading(false));
-  }, []);
+  }, [router]);
 
   function applyTemplate(value: string) {
     const template = getProjectType(value);
@@ -285,7 +288,7 @@ export default function GalaPage() {
           return (
             <Link key={type.value} href={type.page}
               className="bg-white border border-slate-200 rounded-lg overflow-hidden hover:border-emerald-300 hover:bg-emerald-50 transition-colors">
-              <img src={type.imageUrl} alt="" className="w-full h-24 object-cover" />
+              <Image unoptimized src={type.imageUrl} alt="" width={900} height={240} className="w-full h-24 object-cover" />
               <div className="flex items-start gap-3">
                 <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 ml-4 mt-4">
                   <Icon size={18} className="text-slate-700" />
@@ -342,7 +345,7 @@ export default function GalaPage() {
               <input type="checkbox" checked={promesseEnabled} onChange={e => setPromesseEnabled(e.target.checked)} className="w-4 h-4" />
               <div>
                 <p className="text-sm font-semibold text-slate-700">Activer les promesses de don</p>
-                <p className="text-xs text-slate-400 mt-0.5">Le donateur peut s'engager maintenant et l'association le recontacte ensuite.</p>
+                <p className="text-xs text-slate-400 mt-0.5">Le donateur peut s&apos;engager maintenant et l&apos;association le recontacte ensuite.</p>
               </div>
             </label>
           </div>
@@ -377,7 +380,7 @@ export default function GalaPage() {
             const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(donUrl)}`;
             return (
               <div key={g.id} className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-                <img src={imageUrl} alt="" className="w-full h-40 object-cover" />
+                <Image unoptimized src={imageUrl} alt="" width={900} height={400} className="w-full h-40 object-cover" />
                 <div className="p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                   <div className="flex items-start gap-3 min-w-0">
@@ -457,7 +460,7 @@ export default function GalaPage() {
                 </div>
 
                 <div className="bg-slate-50 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-4">
-                  <img src={qrUrl} alt="QR code don" className="w-24 h-24 sm:w-20 sm:h-20 rounded-lg shrink-0 mx-auto sm:mx-0" />
+                  <Image unoptimized src={qrUrl} alt="QR code don" width={96} height={96} className="w-24 h-24 sm:w-20 sm:h-20 rounded-lg shrink-0 mx-auto sm:mx-0" />
                   <div className="flex-1 min-w-0 text-center sm:text-left">
                     <p className="text-xs font-semibold text-slate-600 mb-1 flex items-center justify-center sm:justify-start gap-1">
                       <QrCode size={12} /> Lien de don

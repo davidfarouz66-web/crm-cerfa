@@ -1,6 +1,6 @@
 export const CANONICAL_PUBLIC_ORIGIN = "https://www.trouma-pro.fr";
 
-export function getPublicBaseUrl(origin?: string | null) {
+export function getPublicBaseUrl() {
   const configured = CANONICAL_PUBLIC_ORIGIN;
   const raw = configured || CANONICAL_PUBLIC_ORIGIN;
   const url = raw.startsWith("http") ? raw : `https://${raw}`;
@@ -11,6 +11,6 @@ export function getPublicBaseUrl(origin?: string | null) {
   return normalized;
 }
 
-export function getPublicDonationUrl(galaId: string, origin?: string | null) {
-  return `${getPublicBaseUrl(origin)}/campagnes/${galaId}/don`;
+export function getPublicDonationUrl(galaId: string) {
+  return `${getPublicBaseUrl()}/campagnes/${galaId}/don`;
 }

@@ -26,8 +26,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     });
   }
 
-  const origin = getPublicBaseUrl(req.headers.get("origin") || new URL(req.url).origin);
-  const donationUrl = getPublicDonationUrl(id, origin);
+  const origin = getPublicBaseUrl();
+  const donationUrl = getPublicDonationUrl(id);
   const nbFois = Math.max(1, Number(body.nbFois || 1));
   const montantTotal = parseFloat(body.montant);
   const montantMensuel = body.montantMensuel ? parseFloat(body.montantMensuel) : montantTotal;

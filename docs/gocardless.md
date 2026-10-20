@@ -1,6 +1,6 @@
 # Connexion GoCardless
 
-L'integration GoCardless est deja presente dans le CRM Cerfa :
+L'integration GoCardless est deja presente dans Trouma Pro :
 
 - connexion OAuth depuis `Parametres > Paiements`
 - creation d'un lien de paiement bancaire depuis une page de don gala

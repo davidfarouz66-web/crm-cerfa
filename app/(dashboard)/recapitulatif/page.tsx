@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, Filter, AlertTriangle } from "lucide-react";
+import { Download, AlertTriangle } from "lucide-react";
 import { formatMontant, formatDate } from "@/lib/utils";
 
 interface Cerfa {
@@ -30,11 +30,27 @@ export default function RecapitulatifPage() {
   const [filterMode, setFilterMode] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`/api/cerfa?annee=${annee}&limit=0`)
-      .then((r) => r.json())
-      .then((d) => { setCerfas(d); setLoading(false); });
+    const controller = new AbortController();
+    fetch(`/api/cerfa?annee=${annee}&limit=0`, { signal: controller.signal })
+      .then((r) => {
+        if (!r.ok) throw new Error("Impossible de charger le récapitulatif");
+        return r.json();
+      })
+      .then(setCerfas)
+      .catch((error) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setCerfas([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
   }, [annee]);
+
+  function handleYearChange(value: string) {
+    setLoading(true);
+    setAnnee(value);
+  }
 
   const filtered = filterMode ? cerfas.filter((c) => c.modePaiement === filterMode) : cerfas;
   const total = filtered.reduce((s, c) => s + c.montant, 0);
@@ -60,7 +76,7 @@ export default function RecapitulatifPage() {
 
       {/* Filtres */}
       <div className="flex gap-2 mb-4">
-        <select value={annee} onChange={(e) => setAnnee(e.target.value)}
+        <select value={annee} onChange={(e) => handleYearChange(e.target.value)}
           className="flex-1 px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500">
           {years.map((y) => <option key={y} value={y}>{y}</option>)}
         </select>

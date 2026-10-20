@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, Save, ArrowLeft, Monitor, Smartphone, QrCode, Link2, FileDown, ImageIcon, Upload, X } from "lucide-react";
 import { CANONICAL_PUBLIC_ORIGIN } from "@/lib/public-url";
@@ -71,7 +72,7 @@ export default function GalaDetailPage() {
     fetch(`/api/gala/${id}`)
       .then(async r => {
         if (r.status === 401 || r.redirected) {
-          window.location.href = `/login?callbackUrl=${encodeURIComponent(`/campagnes/${id}`)}`;
+          router.push(`/login?callbackUrl=${encodeURIComponent(`/campagnes/${id}`)}`);
           return null;
         }
         const g = await readJsonResponse(r);
@@ -100,7 +101,7 @@ export default function GalaDetailPage() {
         setError("");
       })
       .catch(e => setError(e instanceof Error ? e.message : "Chargement de la campagne impossible"));
-  }, [id]);
+  }, [id, router]);
 
   function toggleMensualite(val: string) {
     setMensualiteOptions(prev =>
@@ -201,7 +202,7 @@ export default function GalaDetailPage() {
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 mb-6">
         <h2 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2"><QrCode size={16} /> Lien & QR code de don</h2>
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-          <img src={qrUrl} alt="QR code" className="w-32 h-32 sm:w-28 sm:h-28 rounded-xl mx-auto sm:mx-0" />
+          <Image unoptimized src={qrUrl} alt="QR code" width={128} height={128} className="w-32 h-32 sm:w-28 sm:h-28 rounded-xl mx-auto sm:mx-0" />
           <div className="flex-1 min-w-0 text-center sm:text-left">
             <p className="text-xs text-slate-400 mb-1">Lien de don à partager :</p>
             <p className="text-xs font-mono text-slate-600 break-all mb-3">{donUrl}</p>
@@ -234,7 +235,7 @@ export default function GalaDetailPage() {
             <label className="relative block border-2 border-dashed border-slate-200 rounded-xl overflow-hidden cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-all">
               {campaignImageUrl ? (
                 <>
-                  <img src={campaignImageUrl} alt="Image de campagne" className="w-full aspect-video object-cover" />
+                  <Image unoptimized src={campaignImageUrl} alt="Image de campagne" width={1200} height={675} className="w-full aspect-video object-cover" />
                   <button type="button" onClick={(e) => { e.preventDefault(); setCampaignImageUrl(""); }}
                     className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/90 text-slate-600 flex items-center justify-center shadow-sm hover:bg-white">
                     <X size={16} />
@@ -269,7 +270,7 @@ export default function GalaDetailPage() {
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">Date de l'événement</label>
+              <label className="text-xs text-slate-500 mb-1 block">Date de l&apos;événement</label>
               <input type="datetime-local" value={dateEvenement} onChange={e => setDateEvenement(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
@@ -315,7 +316,7 @@ export default function GalaDetailPage() {
             <input type="checkbox" checked={promesseEnabled} onChange={e => setPromesseEnabled(e.target.checked)} className="w-4 h-4 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-slate-700">Activer les promesses de don</p>
-              <p className="text-xs text-slate-400 mt-0.5">Permet aux donateurs de s'engager à faire un don sans payer immédiatement. L'association les recontacte à la date choisie pour finaliser le paiement.</p>
+              <p className="text-xs text-slate-400 mt-0.5">Permet aux donateurs de s&apos;engager à faire un don sans payer immédiatement. L&apos;association les recontacte à la date choisie pour finaliser le paiement.</p>
             </div>
           </label>
         </div>

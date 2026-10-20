@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   Building2, CalendarDays, Check, ChevronDown, CreditCard, Heart,
-  Loader2, Mail, MessageCircle, Share2, ShieldCheck,
+  Loader2, MessageCircle, Share2, ShieldCheck,
 } from "lucide-react";
 
 interface Don {
@@ -81,6 +81,49 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputClass = "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
+
+function getRemainingTime(targetDate: string) {
+  const difference = Math.max(0, new Date(targetDate).getTime() - Date.now());
+  const totalSeconds = Math.floor(difference / 1000);
+  return {
+    days: Math.floor(totalSeconds / 86400),
+    hours: Math.floor((totalSeconds % 86400) / 3600),
+    minutes: Math.floor((totalSeconds % 3600) / 60),
+    seconds: totalSeconds % 60,
+    finished: difference === 0,
+  };
+}
+
+function Countdown({ targetDate }: { targetDate: string }) {
+  const [remaining, setRemaining] = useState(() => getRemainingTime(targetDate));
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setRemaining(getRemainingTime(targetDate)), 1000);
+    return () => window.clearInterval(timer);
+  }, [targetDate]);
+
+  if (remaining.finished) {
+    return <p className="mt-3 text-sm font-extrabold text-white">Le grand jour est arrivé</p>;
+  }
+
+  const units = [
+    { label: "jours", value: remaining.days, prefix: "J-" },
+    { label: "heures", value: remaining.hours },
+    { label: "minutes", value: remaining.minutes },
+    { label: "secondes", value: remaining.seconds },
+  ];
+
+  return (
+    <div className="mt-3 flex max-w-xl gap-2" aria-label={`Compte à rebours : ${remaining.days} jours, ${remaining.hours} heures, ${remaining.minutes} minutes et ${remaining.seconds} secondes`} aria-live="off">
+      {units.map(unit => (
+        <div key={unit.label} className="min-w-0 flex-1 rounded-lg border border-white/20 bg-black/45 px-2 py-2 text-center backdrop-blur-sm">
+          <p className="text-base font-black tabular-nums text-white sm:text-lg">{unit.prefix}{String(unit.value).padStart(unit.prefix ? 1 : 2, "0")}</p>
+          <p className="mt-0.5 truncate text-[10px] font-bold uppercase text-white/70 sm:text-xs">{unit.label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function DonPage() {
   const { id } = useParams<{ id: string }>();
@@ -232,22 +275,21 @@ export default function DonPage() {
   const eventMonthYear = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "Europe/Paris" }).format(eventDateValue);
   const eventDate = `${eventDay === "1" ? "1er" : eventDay} ${eventMonthYear}`;
   const backgroundImage = getBackgroundImage(gala);
-  const organizer = gala.organizer;
-  const showOrganizer = !!organizer && !!(organizer.nom || organizer.presentation || organizer.email || organizer.telephone || organizer.remiseFondsDescription);
   const buttonLabel = montantNombre > 0 ? `Donner ${fmt(montantNombre)}` : "Choisir un montant";
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,#eff6ff_0%,#f8fafc_38%,#ffffff_100%)] text-slate-900">
+    <main className="min-h-screen bg-[#090b10] text-slate-900">
       <div className="mx-auto grid max-w-7xl gap-5 px-3 py-3 sm:px-5 sm:py-5 lg:grid-cols-[minmax(0,1.12fr)_minmax(390px,0.78fr)] lg:gap-7 lg:px-8 lg:py-8">
         <section className="relative min-h-[520px] overflow-hidden rounded-2xl bg-slate-900 shadow-xl sm:min-h-[590px] lg:col-start-1 lg:row-start-1 lg:min-h-[680px]" aria-label="Photo de la campagne">
           <div className="absolute inset-0 bg-cover bg-[position:64%_center] sm:bg-[position:66%_center] lg:bg-[position:62%_center]" style={{ backgroundImage: `url(${backgroundImage})` }} />
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,23,42,0.03)_18%,rgba(15,23,42,0.16)_52%,rgba(15,23,42,0.92)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-[49%] bg-slate-950 sm:hidden" />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.01)_16%,rgba(0,0,0,0.08)_50%,rgba(0,0,0,0.76)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-[49%] bg-black/58 sm:hidden" />
           <div className="absolute inset-x-0 bottom-0 max-w-3xl p-5 text-white sm:p-8 lg:p-10">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/30 bg-slate-950/35 px-3 py-1.5 text-xs font-bold backdrop-blur-sm"><Heart size={13} aria-hidden="true" /> Campagne solidaire</div>
             <h1 className="max-w-2xl text-3xl font-extrabold leading-tight sm:text-5xl lg:max-w-[56%] lg:text-4xl">{displayTitle}</h1>
             <p className="mt-3 max-w-xl text-base font-medium leading-relaxed text-white/90 sm:text-lg lg:max-w-[56%]">{displaySubtitle}</p>
             <div className="mt-4 inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-extrabold text-blue-950 shadow-sm"><CalendarDays size={16} aria-hidden="true" /> Mariage prévu le {eventDate}</div>
+            <Countdown key={gala.dateEvenement} targetDate={gala.dateEvenement} />
           </div>
         </section>
 
@@ -323,7 +365,6 @@ export default function DonPage() {
 
         <section className="space-y-5 lg:col-start-1 lg:row-start-2">
           {detailParagraphs.length > 0 && <article className="rounded-2xl border border-blue-100 bg-white p-5 shadow-sm sm:p-7"><h2 className="flex items-center gap-2 text-xl font-extrabold text-blue-950"><Heart size={20} /> Pourquoi cette collecte ?</h2><div className="mt-4 space-y-4 text-[15px] leading-7 text-slate-600">{detailParagraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div></article>}
-          {showOrganizer && organizer && <article className="rounded-2xl border border-blue-100 bg-blue-950 p-5 text-white shadow-sm sm:p-7"><h2 className="text-xl font-extrabold">Qui organise cette collecte ?</h2>{organizer.nom && <p className="mt-3 text-lg font-bold">{organizer.nom}</p>}{organizer.presentation && <p className="mt-2 leading-relaxed text-blue-100">{organizer.presentation}</p>}{organizer.remiseFondsDescription && <p className="mt-4 rounded-xl bg-white/10 p-4 text-sm leading-relaxed text-blue-50">{organizer.remiseFondsDescription}</p>}{(organizer.email || organizer.telephone) && <div className="mt-4 flex flex-wrap gap-3 text-sm font-semibold text-blue-100">{organizer.email && <a href={`mailto:${organizer.email}`} className="inline-flex items-center gap-2 hover:text-white"><Mail size={15} /> {organizer.email}</a>}{organizer.telephone && <span>{organizer.telephone}</span>}</div>}</article>}
           {donsRecents.length > 0 && <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7"><h2 className="text-xl font-extrabold text-slate-900">Dons récents</h2><div className="mt-4 grid gap-3 sm:grid-cols-2">{donsRecents.map(don => <div key={don.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-bold text-slate-800">{don.anonyme ? "Donateur anonyme" : (don.nomAffiche || "Donateur")}</p><p className="mt-0.5 text-xs text-slate-500">{new Date(don.createdAt).toLocaleDateString("fr-FR")}</p></div><span className="shrink-0 font-extrabold text-blue-800">{fmt(don.montant)}</span></div>{don.message && <p className="mt-3 flex gap-2 text-sm leading-relaxed text-slate-600"><MessageCircle size={15} className="mt-0.5 shrink-0 text-blue-600" /> {don.message}</p>}</div>)}</div></article>}
         </section>
       </div>

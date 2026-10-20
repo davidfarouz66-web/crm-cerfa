@@ -1,24 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { Pencil, X } from "lucide-react";
 
+const subscribe = () => () => {};
+
+function getViewedAssociationName() {
+  const match = document.cookie.match(/(?:^|;\s*)view_as_nom=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 export default function ViewAsBanner() {
-  const [nom, setNom] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
-
-  useEffect(() => {
-    const matchNom = document.cookie.match(/(?:^|;\s*)view_as_nom=([^;]+)/);
-    setNom(matchNom ? decodeURIComponent(matchNom[1]) : null);
-  }, [pathname]);
+  const nom = useSyncExternalStore(subscribe, getViewedAssociationName, () => null);
+  void pathname;
 
   if (!nom) return null;
 
   async function quitter() {
     await fetch("/api/admin/view-as", { method: "DELETE" });
-    setNom(null);
     router.push("/admin");
     router.refresh();
   }

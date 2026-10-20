@@ -1,6 +1,6 @@
 # Préparation Stripe
 
-Stripe est préparé dans le CRM Cerfa pour pouvoir être connecté plus tard, dès que le compte marchand existe.
+Stripe est préparé dans Trouma Pro pour pouvoir être connecté plus tard, dès que le compte marchand existe.
 
 ## Ce qui est déjà prévu dans le code
 

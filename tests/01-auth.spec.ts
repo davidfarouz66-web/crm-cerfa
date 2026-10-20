@@ -1,10 +1,10 @@
 import { test, expect } from "@playwright/test";
-import { login, TEST_EMAIL, TEST_PASSWORD } from "./helpers/auth";
+import { login, TEST_EMAIL } from "./helpers/auth";
 
 test.describe("Authentification", () => {
   test("affiche la page de connexion", async ({ page }) => {
     await page.goto("/login");
-    await expect(page.getByText(/CRM Cerfa|Trouma-Pro/)).toBeVisible();
+    await expect(page.getByText("Trouma Pro", { exact: true })).toBeVisible();
     await expect(page.getByText("Gestion des dons & reçus fiscaux")).toBeVisible();
     await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();

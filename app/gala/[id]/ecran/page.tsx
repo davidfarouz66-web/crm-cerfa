@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
+import Image from "next/image";
 
 const LABELS: Record<string, Record<string, string>> = {
   fr: { objectif: "Objectif", collecte: "Collecté", dons: "dons", anonyme: "Donateur anonyme", merci: "Merci !" },
@@ -171,7 +172,7 @@ export default function EcranGala() {
       {/* Header */}
       <div className="flex items-center justify-between px-12 pt-8 pb-2">
         {gala.logoUrl
-          ? <img src={gala.logoUrl} alt="Logo" className="h-16 object-contain" />
+          ? <Image unoptimized src={gala.logoUrl} alt="Logo" width={220} height={64} className="h-16 w-auto object-contain" />
           : <div />}
         <div className="text-center flex-1">
           <h1 className="text-5xl font-black tracking-tight" style={{ color: gala.couleurSecondaire }}>
@@ -267,7 +268,7 @@ export default function EcranGala() {
               <p className="text-xl font-semibold mt-1 opacity-80">
                 {nouveauDon.anonyme ? langue.anonyme : (nouveauDon.nomAffiche || langue.anonyme)}
               </p>
-              {nouveauDon.message && <p className="text-base mt-1 opacity-60">"{nouveauDon.message}"</p>}
+              {nouveauDon.message && <p className="text-base mt-1 opacity-60">&ldquo;{nouveauDon.message}&rdquo;</p>}
             </div>
             <p className="text-5xl ml-8">{langue.merci}</p>
           </div>

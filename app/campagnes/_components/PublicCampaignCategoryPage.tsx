@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, CalendarDays, HeartHandshake, MapPin, ShieldCheck, Users } from "lucide-react";
 import { prisma } from "@/lib/db";
 
@@ -89,7 +90,7 @@ export default async function PublicCampaignCategoryPage({ config }: { config: C
                 const cardImage = campagne.logoUrl || imageUrl;
                 return (
                   <article key={campagne.id} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-                    <img src={cardImage} alt="" className="h-44 w-full object-cover sm:h-56" />
+                    <Image unoptimized src={cardImage} alt="" width={1200} height={560} className="h-44 w-full object-cover sm:h-56" />
                     <div className="p-4 sm:p-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
@@ -133,7 +134,7 @@ export default async function PublicCampaignCategoryPage({ config }: { config: C
           )}
 
           <p className="flex items-center justify-center gap-1.5 px-2 py-8 text-center text-xs font-semibold text-slate-400">
-            <ShieldCheck size={14} /> Paiement sécurisé via les moyens activés par l'association
+            <ShieldCheck size={14} /> Paiement sécurisé via les moyens activés par l&apos;association
           </p>
         </div>
       </section>

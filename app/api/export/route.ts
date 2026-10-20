@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import ExcelJS from "exceljs";
-import { formatDate, formatMontant } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 import { requireTenant } from "@/lib/tenant";
 
 export async function GET(req: Request) {

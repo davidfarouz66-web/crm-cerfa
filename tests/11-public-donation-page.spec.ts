@@ -47,6 +47,10 @@ test.beforeEach(async ({ page }) => {
 test("affiche la campagne et un formulaire accessible sans montant présélectionné", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Aidons une jeune orpheline à préparer son mariage" })).toBeVisible();
   await expect(page.getByText("Mariage prévu le 1er novembre 2026")).toBeVisible();
+  await expect(page.getByText("jours", { exact: true })).toBeVisible();
+  await expect(page.getByText("secondes", { exact: true })).toBeVisible();
+  await expect(page.getByText("Présentation publique vérifiée.")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Qui organise cette collecte ?" })).toHaveCount(0);
   await expect(page.getByText("Objectif 15 000 €")).toBeVisible();
   await expect(page.getByRole("button", { name: "Choisir un montant" })).toBeDisabled();
   await expect(page.getByText("Le vrai prélèvement mensuel GoCardless sera branché dans l’étape suivante.")).toHaveCount(0);

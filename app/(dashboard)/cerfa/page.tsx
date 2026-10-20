@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, FilePlus, Download, ChevronRight, ChevronLeft, CheckCircle, Clock, Ban } from "lucide-react";
-import { formatMontant, formatDate } from "@/lib/utils";
+import { formatMontant } from "@/lib/utils";
 
 interface Cerfa {
   id: string;
@@ -33,23 +33,44 @@ export default function CerfaListPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    setPage(1);
-  }, [q]);
-
-  useEffect(() => {
-    setLoading(true);
+    const controller = new AbortController();
     const timeout = setTimeout(() => {
-      fetch(`/api/cerfa?q=${encodeURIComponent(q)}&page=${page}`)
-        .then((r) => r.json())
+      fetch(`/api/cerfa?q=${encodeURIComponent(q)}&page=${page}`, { signal: controller.signal })
+        .then((r) => {
+          if (!r.ok) throw new Error("Impossible de charger les reçus");
+          return r.json();
+        })
         .then((d) => {
           setCerfas(d.data);
           setTotal(d.total);
           setTotalPages(d.totalPages);
-          setLoading(false);
+        })
+        .catch((error) => {
+          if (error instanceof DOMException && error.name === "AbortError") return;
+          setCerfas([]);
+          setTotal(0);
+          setTotalPages(1);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
         });
     }, 300);
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+      controller.abort();
+    };
   }, [q, page]);
+
+  function handleSearch(value: string) {
+    setLoading(true);
+    setQ(value);
+    setPage(1);
+  }
+
+  function changePage(nextPage: number) {
+    setLoading(true);
+    setPage(nextPage);
+  }
 
   const getNom = (d: Cerfa["donateur"]) =>
     d.type === "entreprise" ? d.raisonSociale || d.nom : `${d.prenom || ""} ${d.nom}`.trim();
@@ -70,7 +91,7 @@ export default function CerfaListPage() {
 
       <div className="relative mb-4">
         <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input type="text" value={q} onChange={(e) => setQ(e.target.value)}
+        <input type="text" value={q} onChange={(e) => handleSearch(e.target.value)}
           placeholder="Rechercher par n° CERFA, nom..."
           className="w-full pl-11 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-slate-800 text-sm" />
       </div>
@@ -148,7 +169,7 @@ export default function CerfaListPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => changePage(Math.max(1, page - 1))}
                 disabled={page === 1}
                 className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
@@ -156,7 +177,7 @@ export default function CerfaListPage() {
               </button>
               <span className="text-sm text-slate-500">Page {page} / {totalPages}</span>
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => changePage(Math.min(totalPages, page + 1))}
                 disabled={page === totalPages}
                 className="flex items-center gap-1 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >

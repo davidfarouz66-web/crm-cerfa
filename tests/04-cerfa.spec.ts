@@ -44,11 +44,8 @@ test.describe("CERFA — création", () => {
     expect(count).toBeGreaterThan(0);
   });
 
-  test("affiche un avertissement si l'association n'est pas éligible", async ({ page }) => {
+  test("charge le formulaire même si l'association n'est pas éligible", async ({ page }) => {
     await page.goto("/cerfa/nouveau");
-    // Si pas éligible, un alert/warning doit apparaître
-    const warning = page.locator('[role="alert"], .bg-amber-50, .bg-red-50, svg.text-amber');
-    // Ce test vérifie juste que la page charge sans crash
     await expect(page.locator("form")).toBeVisible({ timeout: 8000 });
   });
 
