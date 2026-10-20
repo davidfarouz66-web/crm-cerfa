@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Users, FilePlus, FileText, MoreHorizontal, X, BarChart3, Settings, LogOut, Shield, Tv } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 
@@ -15,6 +15,7 @@ const navItems = [
 
 export default function MobileNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const { data: session } = useSession();
   const role = (session?.user as { role?: string })?.role;
@@ -25,7 +26,7 @@ export default function MobileNav() {
         <div className="fixed inset-0 z-40 md:hidden" onClick={() => setOpen(false)} />
       )}
       {open && (
-        <div className="fixed bottom-14 right-3 z-50 md:hidden bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden w-52">
+        <div role="menu" aria-label="Menu supplémentaire" className="fixed bottom-[calc(4rem_+_env(safe-area-inset-bottom))] right-3 z-[60] max-h-[calc(100dvh_-_6rem_-_env(safe-area-inset-bottom))] w-56 overflow-y-auto rounded-2xl border border-slate-100 bg-white shadow-xl md:hidden">
           <Link href="/recapitulatif" onClick={() => setOpen(false)}
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
             <BarChart3 size={17} className="text-slate-400" /> Bilan
@@ -39,10 +40,10 @@ export default function MobileNav() {
             <Settings size={17} className="text-slate-400" /> Paramètres
           </Link>
           {role === "superadmin" && (
-            <Link href="/admin" onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-3.5 text-sm text-blue-700 hover:bg-blue-50 transition-colors border-t border-slate-50">
+            <button type="button" onClick={() => { setOpen(false); router.push("/admin"); }}
+              className="flex min-h-12 w-full touch-manipulation items-center gap-3 border-t border-slate-50 px-4 py-3.5 text-left text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50 active:bg-blue-100">
               <Shield size={17} className="text-blue-500" /> Administration
-            </Link>
+            </button>
           )}
           <button onClick={() => { setOpen(false); signOut({ callbackUrl: "/login" }); }}
             className="flex items-center gap-3 px-4 py-3.5 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-slate-100 w-full">
@@ -65,7 +66,7 @@ export default function MobileNav() {
             </Link>
           );
         })}
-        <button onClick={() => setOpen((v) => !v)}
+        <button type="button" aria-expanded={open} aria-label={open ? "Fermer le menu" : "Ouvrir le menu Plus"} onClick={() => setOpen((v) => !v)}
           className={`flex-1 flex flex-col items-center py-3 text-xs font-medium transition-colors ${
             open ? "text-blue-600" : "text-slate-500"
           }`}>

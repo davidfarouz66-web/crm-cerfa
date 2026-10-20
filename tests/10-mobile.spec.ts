@@ -29,8 +29,8 @@ test.describe("Mobile — Navigation", () => {
     // Le menu contextuel apparaît
     await expect(page.getByText("Bilan")).toBeVisible({ timeout: 3000 });
     // Cibler le lien Paramètres dans le menu contextuel (pas la sidebar)
-    await expect(page.locator(".fixed.bottom-14").getByText("Paramètres")).toBeVisible();
-    await expect(page.locator(".fixed.bottom-14").getByText("Déconnexion")).toBeVisible();
+    await expect(page.getByRole("menu").getByText("Paramètres")).toBeVisible();
+    await expect(page.getByRole("menu").getByText("Déconnexion")).toBeVisible();
   });
 
   test("navigation mobile vers Donateurs fonctionne", async ({ page }) => {
@@ -61,7 +61,7 @@ test.describe("Mobile — Navigation", () => {
   test("navigation mobile vers Paramètres via menu '...'", async ({ page }) => {
     await page.goto("/dashboard");
     await page.locator("nav.mobile-nav button").last().click();
-    await page.locator(".fixed.bottom-14").getByText("Paramètres").click();
+    await page.getByRole("menu").getByText("Paramètres").click();
     await expect(page).toHaveURL(/parametres/);
   });
 });
